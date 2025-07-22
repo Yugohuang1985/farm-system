@@ -1,0 +1,3499 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>農場管理系統</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'sans': ['Inter', 'system-ui', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        .fade-in {
+            animation: fadeIn 0.6s ease-in-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+        
+        .card-hover:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+        
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .feature-card {
+            background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .calendar-day {
+            min-height: 120px;
+            transition: all 0.2s ease;
+        }
+        
+        .calendar-day:hover {
+            background-color: #f8fafc;
+            transform: scale(1.02);
+        }
+        
+        .work-type-badge {
+            font-size: 0.7rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin: 1px;
+            display: inline-block;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .work-type-badge:hover {
+            transform: scale(1.1);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .modal-overlay {
+            background-color: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+        }
+    </style>
+</head>
+<body class="gradient-bg min-h-screen">
+    <!-- Main Cover Page -->
+    <div id="coverPage" class="min-h-screen flex items-center justify-center p-4">
+        <div class="max-w-6xl w-full">
+            <!-- Header -->
+            <div class="text-center mb-12 fade-in">
+                <div class="text-8xl mb-6">🍊</div>
+                <h1 class="text-5xl md:text-6xl font-bold text-white mb-4">農場管理系統</h1>
+                <p class="text-xl text-white/80 max-w-2xl mx-auto">
+                    專業的農場作業記錄與資材管理平台，讓您的農場管理更加高效便利
+                </p>
+            </div>
+
+            <!-- Navigation Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 fade-in">
+                <!-- 新增工作日誌 -->
+                <div class="feature-card rounded-2xl p-8 text-center card-hover cursor-pointer" onclick="showSection('workLog')">
+                    <div class="text-5xl mb-4">📝</div>
+                    <h3 class="text-xl font-semibold text-white mb-3">新增工作日誌</h3>
+                    <p class="text-white/70 text-sm mb-4">記錄每日農場作業內容、天氣狀況及觀察心得</p>
+                    <div class="bg-white/20 hover:bg-white/30 transition-colors rounded-lg py-2 px-4 text-white font-medium">
+                        開始記錄 →
+                    </div>
+                </div>
+
+                <!-- 新增資材及人員 -->
+                <div class="feature-card rounded-2xl p-8 text-center card-hover cursor-pointer" onclick="showSection('addResources')">
+                    <div class="text-5xl mb-4">➕</div>
+                    <h3 class="text-xl font-semibold text-white mb-3">新增資材及人員</h3>
+                    <p class="text-white/70 text-sm mb-4">建立資材庫存清單與人員資料庫</p>
+                    <div class="bg-white/20 hover:bg-white/30 transition-colors rounded-lg py-2 px-4 text-white font-medium">
+                        新增資料 →
+                    </div>
+                </div>
+
+                <!-- 人員資材管理 -->
+                <div class="feature-card rounded-2xl p-8 text-center card-hover cursor-pointer" onclick="showSection('management')">
+                    <div class="text-5xl mb-4">👥</div>
+                    <h3 class="text-xl font-semibold text-white mb-3">人員資材管理</h3>
+                    <p class="text-white/70 text-sm mb-4">管理農場人員資訊與資材庫存狀況</p>
+                    <div class="bg-white/20 hover:bg-white/30 transition-colors rounded-lg py-2 px-4 text-white font-medium">
+                        進入管理 →
+                    </div>
+                </div>
+
+                <!-- 所有工作日誌 -->
+                <div class="feature-card rounded-2xl p-8 text-center card-hover cursor-pointer" onclick="showSection('allLogs')">
+                    <div class="text-5xl mb-4">📊</div>
+                    <h3 class="text-xl font-semibold text-white mb-3">所有工作日誌</h3>
+                    <p class="text-white/70 text-sm mb-4">查看歷史記錄與統計分析</p>
+                    <div class="bg-white/20 hover:bg-white/30 transition-colors rounded-lg py-2 px-4 text-white font-medium">
+                        查看記錄 →
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Stats -->
+            <div class="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6 fade-in">
+                <div class="feature-card rounded-xl p-6 text-center">
+                    <div class="text-3xl text-white font-bold" id="totalLogs">0</div>
+                    <div class="text-white/70">總工作記錄</div>
+                </div>
+                <div class="feature-card rounded-xl p-6 text-center">
+                    <div class="text-3xl text-white font-bold" id="totalMaterials">0</div>
+                    <div class="text-white/70">資材種類</div>
+                </div>
+                <div class="feature-card rounded-xl p-6 text-center">
+                    <div class="text-3xl text-white font-bold" id="totalPersonnel">0</div>
+                    <div class="text-white/70">人員數量</div>
+                </div>
+            </div>
+
+            <!-- Data Management -->
+            <div class="mt-8 flex justify-center space-x-4 fade-in">
+                <button onclick="exportData()" class="feature-card rounded-lg px-6 py-3 text-white hover:bg-white/10 transition-colors flex items-center">
+                    <span class="mr-2">📤</span>匯出資料
+                </button>
+                <label class="feature-card rounded-lg px-6 py-3 text-white hover:bg-white/10 transition-colors flex items-center cursor-pointer">
+                    <span class="mr-2">📥</span>匯入資料
+                    <input type="file" id="importFile" accept=".csv" class="hidden" onchange="importData(event)">
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <!-- Work Log Section -->
+    <div id="workLogSection" class="hidden min-h-screen bg-gradient-to-br from-green-50 to-blue-50">
+        <div class="container mx-auto px-4 py-8 max-w-6xl">
+            <!-- Back Button -->
+            <button onclick="showSection('cover')" class="mb-6 bg-white hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-lg shadow-md transition-colors flex items-center">
+                ← 返回首頁
+            </button>
+
+            <!-- Header -->
+            <div class="text-center mb-8">
+                <h1 class="text-4xl font-bold text-gray-800 mb-2">📝 新增工作日誌</h1>
+                <p class="text-gray-600">記錄您的農場日常作業與觀察</p>
+            </div>
+
+            <!-- Work Log Form -->
+            <div class="bg-white rounded-xl shadow-lg p-6 mb-8 border border-gray-100">
+                <form id="farmLogForm" class="space-y-6">
+                    <!-- Basic Information Row -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">日期</label>
+                            <input type="date" id="date" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">地點</label>
+                            <input type="text" id="location" placeholder="例：A區田地" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">天氣</label>
+                            <select id="weather" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all">
+                                <option value="">選擇天氣</option>
+                                <option value="晴天">☀️ 晴天</option>
+                                <option value="多雲">⛅ 多雲</option>
+                                <option value="陰天">☁️ 陰天</option>
+                                <option value="小雨">🌦️ 小雨</option>
+                                <option value="大雨">🌧️ 大雨</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Work Details Row -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">作業類型</label>
+                            <select id="workType" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all">
+                                <option value="">選擇作業類型</option>
+                                <option value="整地">🚜 整地</option>
+                                <option value="播種/育苗">🌱 播種/育苗</option>
+                                <option value="施肥">🌿 施肥</option>
+                                <option value="灌溉">💧 灌溉</option>
+                                <option value="病蟲害防治">🐛 病蟲害防治</option>
+                                <option value="除草">🌾 除草</option>
+                                <option value="修剪/疏果">✂️ 修剪/疏果</option>
+                                <option value="採收">🥕 採收</option>
+                                <option value="維護">🔧 維護</option>
+                                <option value="其他">📋 其他</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">作物</label>
+                            <input type="text" id="crop" placeholder="例：番茄、玉米" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all">
+                        </div>
+                    </div>
+
+                    <!-- Material Usage Section -->
+                    <div class="bg-gray-50 rounded-lg p-4">
+                        <h3 class="text-lg font-medium text-gray-800 mb-4 flex items-center">
+                            <span class="mr-2">🧪</span>資材使用
+                        </h3>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                            <div class="relative">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">資材名稱</label>
+                                <input type="text" id="materialName" placeholder="輸入關鍵字搜尋資材..." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+                                <div id="materialSuggestions" class="absolute z-10 w-full bg-white border border-gray-300 rounded-lg shadow-lg mt-1 hidden max-h-40 overflow-y-auto"></div>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">使用量</label>
+                                <input type="number" id="materialQuantity" placeholder="數量" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">單位</label>
+                                <select id="materialUnit" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+                                    <option value="毫升">毫升</option>
+                                    <option value="公升">公升</option>
+                                    <option value="克">克</option>
+                                    <option value="公斤">公斤</option>
+                                    <option value="斤">斤</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">稀釋倍數</label>
+                                <input type="number" id="dilutionRatio" placeholder="例：100" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+                            </div>
+                        </div>
+                        
+                        <div class="flex flex-wrap gap-2 mb-4">
+                            <button type="button" id="addMaterialBtn" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors flex items-center">
+                                <span class="mr-1">➕</span>添加資材
+                            </button>
+                            <div id="materialTotal" class="bg-blue-100 text-blue-800 px-3 py-2 rounded-lg text-sm hidden">
+                                總用量：<span id="totalAmount"></span>
+                            </div>
+                        </div>
+                        
+                        <div id="materialsList" class="space-y-2"></div>
+                    </div>
+
+                    <!-- Work Personnel Section -->
+                    <div class="bg-gray-50 rounded-lg p-4 mt-6">
+                        <h3 class="text-lg font-medium text-gray-800 mb-4 flex items-center">
+                            <span class="mr-2">👥</span>工作人員及工時
+                        </h3>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                            <div class="relative">
+                                <label class="block text-sm font-medium text-gray-700 mb-2">人員姓名</label>
+                                <input type="text" id="workerName" placeholder="輸入關鍵字搜尋人員..." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all">
+                                <div id="workerSuggestions" class="absolute z-10 w-full bg-white border border-gray-300 rounded-lg shadow-lg mt-1 hidden max-h-40 overflow-y-auto"></div>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">工作時數</label>
+                                <input type="number" id="workHours" placeholder="小時" step="0.5" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all">
+                            </div>
+                            <div class="flex items-end">
+                                <button type="button" id="addWorkerBtn" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg transition-colors flex items-center w-full justify-center">
+                                    <span class="mr-1">➕</span>添加人員
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div id="workersList" class="space-y-2"></div>
+                    </div>
+
+                    <!-- Details and Observations -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">作業詳情</label>
+                            <textarea id="details" rows="3" placeholder="詳細描述作業內容..." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all resize-none"></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">產量記錄</label>
+                            <input type="text" id="yield" placeholder="例：收穫 50 公斤番茄" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">觀察記錄</label>
+                            <textarea id="observations" rows="3" placeholder="記錄作物生長狀況、病蟲害等..." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all resize-none"></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">備註</label>
+                            <textarea id="notes" rows="3" placeholder="其他需要記錄的事項..." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all resize-none"></textarea>
+                        </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="flex justify-end">
+                        <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-lg font-medium transition-colors flex items-center shadow-lg">
+                            <span class="mr-2">💾</span>儲存記錄
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Resources Section -->
+    <div id="addResourcesSection" class="hidden min-h-screen bg-gradient-to-br from-purple-50 to-pink-50">
+        <div class="container mx-auto px-4 py-8 max-w-4xl">
+            <button onclick="showSection('cover')" class="mb-6 bg-white hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-lg shadow-md transition-colors flex items-center">
+                ← 返回首頁
+            </button>
+
+            <div class="text-center mb-8">
+                <h1 class="text-4xl font-bold text-gray-800 mb-2">➕ 新增資材及人員</h1>
+                <p class="text-gray-600">建立您的資材庫存與人員資料庫</p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Add Material -->
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <h2 class="text-2xl font-semibold text-gray-800 mb-4 flex items-center">
+                        <span class="mr-2">🧪</span>新增資材
+                    </h2>
+                    <form id="addMaterialForm" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">資材名稱</label>
+                            <input type="text" id="newMaterialName" placeholder="例：有機肥料" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">類別</label>
+                            <select id="materialCategory" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all">
+                                <option value="肥料">肥料</option>
+                                <option value="農藥">農藥</option>
+                                <option value="種子">種子</option>
+                                <option value="工具">工具</option>
+                                <option value="其他">其他</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">入庫日期</label>
+                            <input type="date" id="stockDate" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all">
+                        </div>
+                        
+                        <!-- 庫存管理區塊 -->
+                        <div class="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                            <h4 class="text-sm font-medium text-blue-800 mb-3 flex items-center">
+                                <span class="mr-2">📦</span>庫存管理
+                            </h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">入庫數量</label>
+                                    <input type="number" id="initialStock" placeholder="0" step="0.1" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all" oninput="calculateUnitPrice()">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">庫存單位</label>
+                                    <select id="stockUnit" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all" onchange="toggleBottleCapacity()">
+                                        <option value="毫升">毫升</option>
+                                        <option value="公升">公升</option>
+                                        <option value="克">克</option>
+                                        <option value="公斤">公斤</option>
+                                        <option value="斤">斤</option>
+                                        <option value="包">包</option>
+                                        <option value="瓶">瓶</option>
+                                        <option value="袋">袋</option>
+                                        <option value="個">個</option>
+                                    </select>
+                                </div>
+                                <div id="bottleCapacityDiv" class="hidden">
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">每瓶容量</label>
+                                    <div class="flex space-x-2">
+                                        <input type="number" id="bottleCapacity" placeholder="容量" step="0.1" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all">
+                                        <select id="bottleCapacityUnit" class="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all">
+                                            <option value="毫升">毫升</option>
+                                            <option value="公升">公升</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">入庫價錢</label>
+                                    <input type="number" id="totalPrice" placeholder="總價格" step="0.01" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all" oninput="calculateUnitPrice()">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">單價 (自動計算)</label>
+                                    <input type="number" id="unitPrice" placeholder="每單位價格 (元)" step="0.1" readonly class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-600">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">備註</label>
+                            <input type="text" id="materialRemarks" placeholder="例：使用方法、注意事項" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all">
+                        </div>
+
+                        <button type="submit" class="w-full bg-purple-600 hover:bg-purple-700 text-white py-2 rounded-lg transition-colors">
+                            新增資材
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Add Personnel -->
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <h2 class="text-2xl font-semibold text-gray-800 mb-4 flex items-center">
+                        <span class="mr-2">👤</span>新增人員
+                    </h2>
+                    <form id="addPersonnelForm" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">姓名</label>
+                            <input type="text" id="personnelName" placeholder="員工姓名" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">職位</label>
+                            <select id="personnelRole" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+                                <option value="農場主">農場主</option>
+                                <option value="農場經理">農場經理</option>
+                                <option value="技術員">技術員</option>
+                                <option value="工人">工人</option>
+                                <option value="臨時工">臨時工</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">聯絡電話</label>
+                            <input type="tel" id="personnelPhone" placeholder="聯絡電話" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">專長</label>
+                            <input type="text" id="personnelSkills" placeholder="例：作物栽培、機械操作" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+                        </div>
+                        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg transition-colors">
+                            新增人員
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Management Section -->
+    <div id="managementSection" class="hidden min-h-screen bg-gradient-to-br from-orange-50 to-red-50">
+        <div class="container mx-auto px-4 py-8 max-w-6xl">
+            <button onclick="showSection('cover')" class="mb-6 bg-white hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-lg shadow-md transition-colors flex items-center">
+                ← 返回首頁
+            </button>
+
+            <div class="text-center mb-8">
+                <h1 class="text-4xl font-bold text-gray-800 mb-2">👥 人員資材管理</h1>
+                <p class="text-gray-600">管理農場人員資訊與資材庫存狀況</p>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Materials Management -->
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-2xl font-semibold text-gray-800 flex items-center">
+                            <span class="mr-2">🧪</span>資材管理
+                        </h2>
+                        <div class="flex space-x-2">
+                            <button onclick="showStockReport()" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm transition-colors">
+                                📊 庫存報表
+                            </button>
+                        </div>
+                    </div>
+                    <div id="materialsList" class="space-y-3">
+                        <div class="text-center text-gray-500 py-4">
+                            尚無資材記錄
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Personnel Management -->
+                <div class="bg-white rounded-xl shadow-lg p-6">
+                    <h2 class="text-2xl font-semibold text-gray-800 mb-4 flex items-center">
+                        <span class="mr-2">👥</span>人員管理
+                    </h2>
+                    <div id="personnelList" class="space-y-3">
+                        <div class="text-center text-gray-500 py-4">
+                            尚無人員記錄
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- All Logs Section with Calendar -->
+    <div id="allLogsSection" class="hidden min-h-screen bg-gradient-to-br from-green-50 to-blue-50">
+        <div class="container mx-auto px-4 py-8 max-w-7xl">
+            <button onclick="showSection('cover')" class="mb-6 bg-white hover:bg-gray-50 text-gray-700 px-4 py-2 rounded-lg shadow-md transition-colors flex items-center">
+                ← 返回首頁
+            </button>
+
+            <div class="text-center mb-8">
+                <h1 class="text-4xl font-bold text-gray-800 mb-2">📊 所有工作日誌</h1>
+                <p class="text-gray-600">查看歷史記錄與統計分析</p>
+            </div>
+
+            <!-- Calendar Navigation -->
+            <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+                <div class="flex justify-between items-center mb-6">
+                    <button onclick="changeMonth(-1)" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors">
+                        ← 上個月
+                    </button>
+                    <h2 id="currentMonth" class="text-2xl font-bold text-gray-800"></h2>
+                    <button onclick="changeMonth(1)" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors">
+                        下個月 →
+                    </button>
+                </div>
+
+                <!-- Calendar Grid -->
+                <div class="grid grid-cols-7 gap-1">
+                    <!-- Day Headers -->
+                    <div class="text-center font-semibold text-gray-600 py-2">日</div>
+                    <div class="text-center font-semibold text-gray-600 py-2">一</div>
+                    <div class="text-center font-semibold text-gray-600 py-2">二</div>
+                    <div class="text-center font-semibold text-gray-600 py-2">三</div>
+                    <div class="text-center font-semibold text-gray-600 py-2">四</div>
+                    <div class="text-center font-semibold text-gray-600 py-2">五</div>
+                    <div class="text-center font-semibold text-gray-600 py-2">六</div>
+                    
+                    <!-- Calendar Days -->
+                    <div id="calendarDays" class="contents"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Day Details Modal -->
+    <div id="dayDetailsModal" class="fixed inset-0 modal-overlay hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 id="modalDate" class="text-2xl font-bold text-gray-800"></h2>
+                    <button onclick="closeDayModal()" class="text-gray-500 hover:text-gray-700 text-2xl">×</button>
+                </div>
+                <div id="dayLogsList" class="space-y-4"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Log Modal -->
+    <div id="editLogModal" class="fixed inset-0 modal-overlay hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold text-gray-800">編輯工作記錄</h2>
+                    <button onclick="closeEditModal()" class="text-gray-500 hover:text-gray-700 text-2xl">×</button>
+                </div>
+                <form id="editLogForm" class="space-y-6">
+                    <!-- Edit form will be populated dynamically -->
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stock Alert Modal -->
+    <div id="stockAlertModal" class="fixed inset-0 modal-overlay hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold text-orange-600 flex items-center">
+                        <span class="mr-2">⚠️</span>庫存警示
+                    </h2>
+                    <button onclick="closeStockAlert()" class="text-gray-500 hover:text-gray-700 text-2xl">×</button>
+                </div>
+                <div id="stockAlertContent" class="space-y-4">
+                    <!-- Alert content will be populated dynamically -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stock Report Modal -->
+    <div id="stockReportModal" class="fixed inset-0 modal-overlay hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[80vh] overflow-y-auto">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold text-blue-600 flex items-center">
+                        <span class="mr-2">📊</span>庫存報表
+                    </h2>
+                    <button onclick="closeStockReport()" class="text-gray-500 hover:text-gray-700 text-2xl">×</button>
+                </div>
+                <div id="stockReportContent" class="space-y-4">
+                    <!-- Report content will be populated dynamically -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stock History Modal -->
+    <div id="stockHistoryModal" class="fixed inset-0 modal-overlay hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[80vh] overflow-y-auto">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 id="stockHistoryTitle" class="text-2xl font-bold text-blue-600 flex items-center">
+                        <span class="mr-2">📋</span>庫存進出記錄
+                    </h2>
+                    <div class="flex space-x-2">
+                        <button onclick="adjustStockFromHistory()" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm transition-colors">
+                            📦 調整庫存
+                        </button>
+                        <button onclick="closeStockHistory()" class="text-gray-500 hover:text-gray-700 text-2xl">×</button>
+                    </div>
+                </div>
+                <div id="stockHistoryContent" class="space-y-4">
+                    <!-- History content will be populated dynamically -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stock Adjustment Modal -->
+    <div id="stockAdjustModal" class="fixed inset-0 modal-overlay hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-2xl max-w-md w-full">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-bold text-gray-800">調整庫存</h2>
+                    <button onclick="closeStockAdjust()" class="text-gray-500 hover:text-gray-700 text-2xl">×</button>
+                </div>
+                <form id="stockAdjustForm" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">資材名稱</label>
+                        <input type="text" id="adjustMaterialName" readonly class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">目前庫存</label>
+                        <input type="text" id="currentStock" readonly class="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">調整類型</label>
+                        <select id="adjustType" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+                            <option value="add">增加庫存 (+)</option>
+                            <option value="subtract">減少庫存 (-)</option>
+                            <option value="set">設定庫存 (=)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">調整數量</label>
+                        <input type="number" id="adjustAmount" placeholder="輸入數量" step="0.1" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">調整原因</label>
+                        <select id="adjustReason" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+                            <option value="進貨">進貨</option>
+                            <option value="盤點調整">盤點調整</option>
+                            <option value="損耗">損耗</option>
+                            <option value="過期報廢">過期報廢</option>
+                            <option value="其他">其他</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">備註</label>
+                        <textarea id="adjustNote" rows="2" placeholder="調整說明..." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all resize-none"></textarea>
+                    </div>
+                    <div class="flex justify-end space-x-3">
+                        <button type="button" onclick="closeStockAdjust()" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-colors">
+                            取消
+                        </button>
+                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors">
+                            確認調整
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let logEntries = JSON.parse(localStorage.getItem('farmLogEntries') || '[]');
+        let materials = JSON.parse(localStorage.getItem('farmMaterials') || '[]');
+        let personnel = JSON.parse(localStorage.getItem('farmPersonnel') || '[]');
+        let currentMaterials = [];
+        let currentWorkers = [];
+        let currentDate = new Date();
+        let editingLogId = null;
+
+        // Work type colors
+        const WORK_TYPE_COLORS = {
+            '整地': 'text-yellow-700 bg-yellow-50 border-yellow-200',
+            '播種/育苗': 'text-blue-700 bg-blue-50 border-blue-200',
+            '施肥': 'text-green-700 bg-green-50 border-green-200',
+            '灌溉': 'text-indigo-700 bg-indigo-50 border-indigo-200',
+            '病蟲害防治': 'text-red-700 bg-red-50 border-red-200',
+            '除草': 'text-lime-700 bg-lime-50 border-lime-200',
+            '修剪/疏果': 'text-pink-700 bg-pink-50 border-pink-200',
+            '採收': 'text-purple-700 bg-purple-50 border-purple-200',
+            '維護': 'text-gray-700 bg-gray-50 border-gray-200',
+            '其他': 'text-zinc-700 bg-zinc-50 border-zinc-200',
+        };
+
+        // Work type short names for calendar display
+        const WORK_TYPE_SHORT = {
+            '整地': '整地',
+            '播種/育苗': '播種',
+            '施肥': '施肥',
+            '灌溉': '灌溉',
+            '病蟲害防治': '防治',
+            '除草': '除草',
+            '修剪/疏果': '修剪',
+            '採收': '採收',
+            '維護': '維護',
+            '其他': '其他',
+        };
+
+        // Conversion factors
+        const CONVERSION_FACTORS = {
+            '克': 1,
+            '公斤': 1000,
+            '斤': 600,
+            '毫升': 1,
+            '公升': 1000,
+        };
+
+        // Initialize app
+        document.addEventListener('DOMContentLoaded', function() {
+            updateStats();
+            setupEventListeners();
+        });
+
+        // Calculate unit price automatically
+        function calculateUnitPrice() {
+            const initialStock = parseFloat(document.getElementById('initialStock').value) || 0;
+            const totalPrice = parseFloat(document.getElementById('totalPrice').value) || 0;
+            const unitPriceField = document.getElementById('unitPrice');
+            
+            if (initialStock > 0 && totalPrice > 0) {
+                const unitPrice = (totalPrice / initialStock).toFixed(1);
+                unitPriceField.value = unitPrice;
+            } else {
+                unitPriceField.value = '';
+            }
+        }
+
+        // Toggle bottle capacity input based on unit selection
+        function toggleBottleCapacity() {
+            const stockUnit = document.getElementById('stockUnit').value;
+            const bottleCapacityDiv = document.getElementById('bottleCapacityDiv');
+            
+            if (stockUnit === '瓶') {
+                bottleCapacityDiv.classList.remove('hidden');
+            } else {
+                bottleCapacityDiv.classList.add('hidden');
+                // Clear bottle capacity values when hidden
+                document.getElementById('bottleCapacity').value = '';
+                document.getElementById('bottleCapacityUnit').value = '毫升';
+            }
+        }
+
+        function setupEventListeners() {
+            // Work log form
+            const farmLogForm = document.getElementById('farmLogForm');
+            if (farmLogForm) {
+                farmLogForm.addEventListener('submit', handleWorkLogSubmit);
+                document.getElementById('date').value = new Date().toISOString().split('T')[0];
+                document.getElementById('addMaterialBtn').addEventListener('click', addMaterial);
+                document.getElementById('addWorkerBtn').addEventListener('click', addWorker);
+                
+                // Material search
+                document.getElementById('materialName').addEventListener('input', handleMaterialSearch);
+                document.getElementById('materialName').addEventListener('blur', () => {
+                    setTimeout(() => document.getElementById('materialSuggestions').classList.add('hidden'), 200);
+                });
+                
+                // Worker search
+                document.getElementById('workerName').addEventListener('input', handleWorkerSearch);
+                document.getElementById('workerName').addEventListener('blur', () => {
+                    setTimeout(() => document.getElementById('workerSuggestions').classList.add('hidden'), 200);
+                });
+                
+                ['materialQuantity', 'materialUnit', 'dilutionRatio'].forEach(id => {
+                    const element = document.getElementById(id);
+                    if (element) {
+                        element.addEventListener('input', updateMaterialTotal);
+                    }
+                });
+            }
+
+            // Add material form
+            const addMaterialForm = document.getElementById('addMaterialForm');
+            if (addMaterialForm) {
+                addMaterialForm.addEventListener('submit', handleAddMaterial);
+                // 設定入庫日期預設值為今天
+                const stockDateField = document.getElementById('stockDate');
+                if (stockDateField) {
+                    stockDateField.value = new Date().toISOString().split('T')[0];
+                }
+            }
+
+            // Add personnel form
+            const addPersonnelForm = document.getElementById('addPersonnelForm');
+            if (addPersonnelForm) {
+                addPersonnelForm.addEventListener('submit', handleAddPersonnel);
+            }
+        }
+
+        function showSection(section) {
+            // Hide all sections
+            document.getElementById('coverPage').classList.add('hidden');
+            document.getElementById('workLogSection').classList.add('hidden');
+            document.getElementById('addResourcesSection').classList.add('hidden');
+            document.getElementById('managementSection').classList.add('hidden');
+            document.getElementById('allLogsSection').classList.add('hidden');
+
+            // Show selected section
+            if (section === 'cover') {
+                document.getElementById('coverPage').classList.remove('hidden');
+                updateStats();
+            } else if (section === 'workLog') {
+                document.getElementById('workLogSection').classList.remove('hidden');
+                setupEventListeners();
+            } else if (section === 'addResources') {
+                document.getElementById('addResourcesSection').classList.remove('hidden');
+                setupEventListeners();
+            } else if (section === 'management') {
+                document.getElementById('managementSection').classList.remove('hidden');
+                displayMaterialsManagement();
+                displayPersonnelManagement();
+            } else if (section === 'allLogs') {
+                document.getElementById('allLogsSection').classList.remove('hidden');
+                displayCalendar();
+            }
+        }
+
+        function updateStats() {
+            document.getElementById('totalLogs').textContent = logEntries.length;
+            
+            // 計算不重複的資材品項數量
+            const uniqueMaterials = new Set(materials.map(m => m.name));
+            document.getElementById('totalMaterials').textContent = uniqueMaterials.size;
+            
+            document.getElementById('totalPersonnel').textContent = personnel.length;
+        }
+
+        function displayCalendar() {
+            const monthNames = ['一月', '二月', '三月', '四月', '五月', '六月', 
+                              '七月', '八月', '九月', '十月', '十一月', '十二月'];
+            
+            document.getElementById('currentMonth').textContent = 
+                `${currentDate.getFullYear()}年 ${monthNames[currentDate.getMonth()]}`;
+            
+            const firstDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+            const lastDay = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+            const startDate = new Date(firstDay);
+            startDate.setDate(startDate.getDate() - firstDay.getDay());
+            
+            const calendarDays = document.getElementById('calendarDays');
+            calendarDays.innerHTML = '';
+            
+            for (let i = 0; i < 42; i++) {
+                const date = new Date(startDate);
+                date.setDate(startDate.getDate() + i);
+                
+                const dayDiv = document.createElement('div');
+                dayDiv.className = `calendar-day border border-gray-200 p-2 cursor-pointer ${
+                    date.getMonth() !== currentDate.getMonth() ? 'text-gray-400 bg-gray-50' : 'bg-white hover:bg-gray-50'
+                }`;
+                
+                const dateStr = date.toISOString().split('T')[0];
+                const dayLogs = logEntries.filter(log => log.date === dateStr);
+                
+                dayDiv.innerHTML = `
+                    <div class="font-semibold text-lg mb-1">${date.getDate()}</div>
+                    <div class="space-y-1">
+                        ${dayLogs.map(log => {
+                            const workTypeColor = WORK_TYPE_COLORS[log.workType] || 'text-gray-700 bg-gray-50 border-gray-200';
+                            const shortName = WORK_TYPE_SHORT[log.workType] || log.workType;
+                            return `<div class="work-type-badge ${workTypeColor}" 
+                                         onclick="event.stopPropagation(); editLog(${log.id})"
+                                         title="點擊編輯：${log.workType}">
+                                        ${shortName}
+                                    </div>`;
+                        }).join('')}
+                    </div>
+                `;
+                
+                dayDiv.onclick = () => showDayDetails(dateStr);
+                calendarDays.appendChild(dayDiv);
+            }
+        }
+
+        function changeMonth(direction) {
+            currentDate.setMonth(currentDate.getMonth() + direction);
+            displayCalendar();
+        }
+
+        function showDayDetails(dateStr) {
+            const dayLogs = logEntries.filter(log => log.date === dateStr);
+            const date = new Date(dateStr + 'T00:00:00');
+            
+            document.getElementById('modalDate').textContent = 
+                `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日 工作記錄`;
+            
+            const dayLogsList = document.getElementById('dayLogsList');
+            
+            if (dayLogs.length === 0) {
+                dayLogsList.innerHTML = `
+                    <div class="text-center text-gray-500 py-8">
+                        <div class="text-4xl mb-2">📝</div>
+                        <p>這天沒有工作記錄</p>
+                    </div>
+                `;
+            } else {
+                dayLogsList.innerHTML = '';
+                dayLogs.forEach(log => {
+                    const logDiv = document.createElement('div');
+                    logDiv.className = 'border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow';
+                    
+                    const workTypeColor = WORK_TYPE_COLORS[log.workType] || 'text-gray-700 bg-gray-50 border-gray-200';
+                    
+                    let materialsHtml = '';
+                    if (log.materials && log.materials.length > 0) {
+                        materialsHtml = `
+                            <div class="mt-3">
+                                <h4 class="text-sm font-medium text-gray-700 mb-2">使用資材：</h4>
+                                <div class="space-y-1">
+                                    ${log.materials.map(material => {
+                                        let dilutionText = material.dilution ? ` (稀釋 ${material.dilution} 倍)` : '';
+                                        let totalText = material.totalMl && material.totalLiters ? 
+                                            ` → ${material.totalMl} 毫升 (${material.totalLiters} 公升)` : '';
+                                        return `<div class="text-sm text-gray-600 bg-gray-50 px-2 py-1 rounded">
+                                            ${material.name} - ${material.quantity} ${material.unit}${dilutionText}${totalText}
+                                        </div>`;
+                                    }).join('')}
+                                </div>
+                            </div>
+                        `;
+                    }
+
+                    let workersHtml = '';
+                    if (log.workers && log.workers.length > 0) {
+                        const totalHours = log.workers.reduce((sum, worker) => sum + worker.hours, 0);
+                        workersHtml = `
+                            <div class="mt-3">
+                                <h4 class="text-sm font-medium text-gray-700 mb-2">工作人員 (總計：${totalHours} 小時)：</h4>
+                                <div class="space-y-1">
+                                    ${log.workers.map(worker => {
+                                        return `<div class="text-sm text-gray-600 bg-blue-50 px-2 py-1 rounded">
+                                            ${worker.name} - ${worker.hours} 小時
+                                        </div>`;
+                                    }).join('')}
+                                </div>
+                            </div>
+                        `;
+                    }
+                    
+                    logDiv.innerHTML = `
+                        <div class="flex justify-between items-start mb-3">
+                            <div class="flex items-center space-x-3">
+                                <span class="px-3 py-1 rounded-full text-sm font-medium border ${workTypeColor}">
+                                    ${log.workType}
+                                </span>
+                                ${log.weather ? `<span class="text-gray-500">${log.weather}</span>` : ''}
+                            </div>
+                            <button onclick="editLog(${log.id})" class="text-blue-500 hover:text-blue-700 transition-colors">
+                                ✏️ 編輯
+                            </button>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                ${log.location ? `<p class="text-sm text-gray-600 mb-1"><strong>地點：</strong>${log.location}</p>` : ''}
+                                ${log.crop ? `<p class="text-sm text-gray-600 mb-1"><strong>作物：</strong>${log.crop}</p>` : ''}
+                                ${log.details ? `<p class="text-sm text-gray-600 mb-1"><strong>作業詳情：</strong>${log.details}</p>` : ''}
+                                ${log.yield ? `<p class="text-sm text-gray-600 mb-1"><strong>產量：</strong>${log.yield}</p>` : ''}
+                            </div>
+                            <div>
+                                ${log.observations ? `<p class="text-sm text-gray-600 mb-1"><strong>觀察：</strong>${log.observations}</p>` : ''}
+                                ${log.notes ? `<p class="text-sm text-gray-600 mb-1"><strong>備註：</strong>${log.notes}</p>` : ''}
+                            </div>
+                        </div>
+                        
+                        ${materialsHtml}
+                        ${workersHtml}
+                    `;
+                    
+                    dayLogsList.appendChild(logDiv);
+                });
+            }
+            
+            document.getElementById('dayDetailsModal').classList.remove('hidden');
+        }
+
+        function closeDayModal() {
+            document.getElementById('dayDetailsModal').classList.add('hidden');
+        }
+
+        function editLog(logId) {
+            const log = logEntries.find(l => l.id === logId);
+            if (!log) return;
+            
+            editingLogId = logId;
+            currentMaterials = [...(log.materials || [])];
+            currentWorkers = [...(log.workers || [])];
+            
+            const editForm = document.getElementById('editLogForm');
+            editForm.innerHTML = `
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">日期</label>
+                        <input type="date" id="editDate" value="${log.date}" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">地點</label>
+                        <input type="text" id="editLocation" value="${log.location || ''}" placeholder="例：A區田地" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">天氣</label>
+                        <select id="editWeather" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all">
+                            <option value="">選擇天氣</option>
+                            <option value="晴天" ${log.weather === '晴天' ? 'selected' : ''}>☀️ 晴天</option>
+                            <option value="多雲" ${log.weather === '多雲' ? 'selected' : ''}>⛅ 多雲</option>
+                            <option value="陰天" ${log.weather === '陰天' ? 'selected' : ''}>☁️ 陰天</option>
+                            <option value="小雨" ${log.weather === '小雨' ? 'selected' : ''}>🌦️ 小雨</option>
+                            <option value="大雨" ${log.weather === '大雨' ? 'selected' : ''}>🌧️ 大雨</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">作業類型</label>
+                        <select id="editWorkType" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all">
+                            <option value="">選擇作業類型</option>
+                            <option value="整地" ${log.workType === '整地' ? 'selected' : ''}>🚜 整地</option>
+                            <option value="播種/育苗" ${log.workType === '播種/育苗' ? 'selected' : ''}>🌱 播種/育苗</option>
+                            <option value="施肥" ${log.workType === '施肥' ? 'selected' : ''}>🌿 施肥</option>
+                            <option value="灌溉" ${log.workType === '灌溉' ? 'selected' : ''}>💧 灌溉</option>
+                            <option value="病蟲害防治" ${log.workType === '病蟲害防治' ? 'selected' : ''}>🐛 病蟲害防治</option>
+                            <option value="除草" ${log.workType === '除草' ? 'selected' : ''}>🌾 除草</option>
+                            <option value="修剪/疏果" ${log.workType === '修剪/疏果' ? 'selected' : ''}>✂️ 修剪/疏果</option>
+                            <option value="採收" ${log.workType === '採收' ? 'selected' : ''}>🥕 採收</option>
+                            <option value="維護" ${log.workType === '維護' ? 'selected' : ''}>🔧 維護</option>
+                            <option value="其他" ${log.workType === '其他' ? 'selected' : ''}>📋 其他</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">作物</label>
+                        <input type="text" id="editCrop" value="${log.crop || ''}" placeholder="例：番茄、玉米" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all">
+                    </div>
+                </div>
+
+                <!-- Material Usage Section -->
+                <div class="bg-gray-50 rounded-lg p-4">
+                    <h3 class="text-lg font-medium text-gray-800 mb-4 flex items-center">
+                        <span class="mr-2">🧪</span>資材使用
+                    </h3>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                        <div class="relative">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">資材名稱</label>
+                            <input type="text" id="editMaterialName" placeholder="輸入關鍵字搜尋資材..." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+                            <div id="editMaterialSuggestions" class="absolute z-10 w-full bg-white border border-gray-300 rounded-lg shadow-lg mt-1 hidden max-h-40 overflow-y-auto"></div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">使用量</label>
+                            <input type="number" id="editMaterialQuantity" placeholder="數量" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">單位</label>
+                            <select id="editMaterialUnit" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+                                <option value="毫升">毫升</option>
+                                <option value="公升">公升</option>
+                                <option value="克">克</option>
+                                <option value="公斤">公斤</option>
+                                <option value="斤">斤</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">稀釋倍數</label>
+                            <input type="number" id="editDilutionRatio" placeholder="例：100" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+                        </div>
+                    </div>
+                    
+                    <div class="flex flex-wrap gap-2 mb-4">
+                        <button type="button" onclick="addEditMaterial()" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors flex items-center">
+                            <span class="mr-1">➕</span>添加資材
+                        </button>
+                    </div>
+                    
+                    <div id="editMaterialsList" class="space-y-2"></div>
+                </div>
+
+                <!-- Work Personnel Section -->
+                <div class="bg-gray-50 rounded-lg p-4 mt-6">
+                    <h3 class="text-lg font-medium text-gray-800 mb-4 flex items-center">
+                        <span class="mr-2">👥</span>工作人員及工時
+                    </h3>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                        <div class="relative">
+                            <label class="block text-sm font-medium text-gray-700 mb-2">人員姓名</label>
+                            <input type="text" id="editWorkerName" placeholder="輸入關鍵字搜尋人員..." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all">
+                            <div id="editWorkerSuggestions" class="absolute z-10 w-full bg-white border border-gray-300 rounded-lg shadow-lg mt-1 hidden max-h-40 overflow-y-auto"></div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">工作時數</label>
+                            <input type="number" id="editWorkHours" placeholder="小時" step="0.5" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all">
+                        </div>
+                        <div class="flex items-end">
+                            <button type="button" onclick="addEditWorker()" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg transition-colors flex items-center w-full justify-center">
+                                <span class="mr-1">➕</span>添加人員
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div id="editWorkersList" class="space-y-2"></div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">作業詳情</label>
+                        <textarea id="editDetails" rows="3" placeholder="詳細描述作業內容..." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all resize-none">${log.details || ''}</textarea>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">產量記錄</label>
+                        <input type="text" id="editYield" value="${log.yield || ''}" placeholder="例：收穫 50 公斤番茄" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">觀察記錄</label>
+                        <textarea id="editObservations" rows="3" placeholder="記錄作物生長狀況、病蟲害等..." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all resize-none">${log.observations || ''}</textarea>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">備註</label>
+                        <textarea id="editNotes" rows="3" placeholder="其他需要記錄的事項..." class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all resize-none">${log.notes || ''}</textarea>
+                    </div>
+                </div>
+
+                <div class="flex justify-between">
+                    <button type="button" onclick="deleteLogEntry(${logId})" class="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
+                        🗑️ 刪除記錄
+                    </button>
+                    <div class="space-x-4">
+                        <button type="button" onclick="closeEditModal()" class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-3 rounded-lg font-medium transition-colors">
+                            取消
+                        </button>
+                        <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
+                            💾 儲存變更
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            // Setup edit form event listeners
+            setupEditFormListeners();
+            displayEditMaterials();
+            displayEditWorkers();
+            
+            document.getElementById('editLogModal').classList.remove('hidden');
+        }
+
+        function setupEditFormListeners() {
+            // Edit form submission
+            document.getElementById('editLogForm').addEventListener('submit', handleEditLogSubmit);
+            
+            // Material search in edit form
+            document.getElementById('editMaterialName').addEventListener('input', handleEditMaterialSearch);
+            document.getElementById('editMaterialName').addEventListener('blur', () => {
+                setTimeout(() => document.getElementById('editMaterialSuggestions').classList.add('hidden'), 200);
+            });
+            
+            // Worker search in edit form
+            document.getElementById('editWorkerName').addEventListener('input', handleEditWorkerSearch);
+            document.getElementById('editWorkerName').addEventListener('blur', () => {
+                setTimeout(() => document.getElementById('editWorkerSuggestions').classList.add('hidden'), 200);
+            });
+        }
+
+        function handleEditMaterialSearch() {
+            const query = document.getElementById('editMaterialName').value.toLowerCase();
+            const suggestions = document.getElementById('editMaterialSuggestions');
+            
+            if (query.length < 1) {
+                suggestions.classList.add('hidden');
+                return;
+            }
+            
+            // 過濾並去重複名稱的資材
+            const filteredMaterials = materials.filter(material => 
+                material.name.toLowerCase().includes(query)
+            );
+            
+            // 去除重複名稱，只保留每個名稱的第一個項目
+            const uniqueMaterials = [];
+            const seenNames = new Set();
+            
+            filteredMaterials.forEach(material => {
+                if (!seenNames.has(material.name)) {
+                    seenNames.add(material.name);
+                    uniqueMaterials.push(material);
+                }
+            });
+            
+            if (uniqueMaterials.length === 0) {
+                suggestions.classList.add('hidden');
+                return;
+            }
+            
+            suggestions.innerHTML = '';
+            uniqueMaterials.forEach(material => {
+                const div = document.createElement('div');
+                div.className = 'px-3 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0';
+                div.innerHTML = `
+                    <div class="font-medium">${material.name}</div>
+                    <div class="text-sm text-gray-500">${material.category}</div>
+                    ${material.remarks ? `<div class="text-xs text-gray-400">${material.remarks}</div>` : ''}
+                `;
+                div.onclick = () => {
+                    document.getElementById('editMaterialName').value = material.name;
+                    suggestions.classList.add('hidden');
+                };
+                suggestions.appendChild(div);
+            });
+            
+            suggestions.classList.remove('hidden');
+        }
+
+        function handleEditWorkerSearch() {
+            const query = document.getElementById('editWorkerName').value.toLowerCase();
+            const suggestions = document.getElementById('editWorkerSuggestions');
+            
+            if (query.length < 1) {
+                suggestions.classList.add('hidden');
+                return;
+            }
+            
+            const filteredPersonnel = personnel.filter(person => 
+                person.name.toLowerCase().includes(query)
+            );
+            
+            if (filteredPersonnel.length === 0) {
+                suggestions.classList.add('hidden');
+                return;
+            }
+            
+            suggestions.innerHTML = '';
+            filteredPersonnel.forEach(person => {
+                const div = document.createElement('div');
+                div.className = 'px-3 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0';
+                div.innerHTML = `
+                    <div class="font-medium">${person.name}</div>
+                    <div class="text-sm text-gray-500">${person.role}</div>
+                `;
+                div.onclick = () => {
+                    document.getElementById('editWorkerName').value = person.name;
+                    suggestions.classList.add('hidden');
+                };
+                suggestions.appendChild(div);
+            });
+            
+            suggestions.classList.remove('hidden');
+        }
+
+        function addEditMaterial() {
+            const name = document.getElementById('editMaterialName').value.trim();
+            const quantity = document.getElementById('editMaterialQuantity').value;
+            const unit = document.getElementById('editMaterialUnit').value;
+            const dilution = document.getElementById('editDilutionRatio').value;
+            
+            if (!name || !quantity) {
+                alert('請填寫資材名稱和使用量');
+                return;
+            }
+            
+            const totals = calculateMaterialTotals(quantity, unit, dilution);
+            
+            const material = {
+                name,
+                quantity: parseFloat(quantity),
+                unit,
+                dilution: dilution ? parseFloat(dilution) : null,
+                totalMl: totals.totalMl,
+                totalLiters: totals.totalLiters
+            };
+            
+            currentMaterials.push(material);
+            displayEditMaterials();
+            
+            // Clear inputs
+            document.getElementById('editMaterialName').value = '';
+            document.getElementById('editMaterialQuantity').value = '';
+            document.getElementById('editDilutionRatio').value = '';
+        }
+
+        function addEditWorker() {
+            const name = document.getElementById('editWorkerName').value.trim();
+            const hours = document.getElementById('editWorkHours').value;
+            
+            if (!name || !hours) {
+                alert('請填寫人員姓名和工作時數');
+                return;
+            }
+            
+            const worker = {
+                name,
+                hours: parseFloat(hours)
+            };
+            
+            currentWorkers.push(worker);
+            displayEditWorkers();
+            
+            // Clear inputs
+            document.getElementById('editWorkerName').value = '';
+            document.getElementById('editWorkHours').value = '';
+        }
+
+        function displayEditMaterials() {
+            const container = document.getElementById('editMaterialsList');
+            container.innerHTML = '';
+            
+            currentMaterials.forEach((material, index) => {
+                const div = document.createElement('div');
+                div.className = 'bg-white border border-gray-200 rounded-lg p-3 flex justify-between items-center';
+                
+                let dilutionText = material.dilution ? ` (稀釋 ${material.dilution} 倍)` : '';
+                let totalText = material.totalMl && material.totalLiters ? 
+                    ` → 總用量：${material.totalMl} 毫升 (${material.totalLiters} 公升)` : '';
+                
+                div.innerHTML = `
+                    <span class="text-gray-800">
+                        <strong>${material.name}</strong> - ${material.quantity} ${material.unit}${dilutionText}${totalText}
+                    </span>
+                    <button onclick="removeEditMaterial(${index})" class="text-red-500 hover:text-red-700 transition-colors">
+                        🗑️
+                    </button>
+                `;
+                
+                container.appendChild(div);
+            });
+        }
+
+        function displayEditWorkers() {
+            const container = document.getElementById('editWorkersList');
+            container.innerHTML = '';
+            
+            currentWorkers.forEach((worker, index) => {
+                const div = document.createElement('div');
+                div.className = 'bg-white border border-gray-200 rounded-lg p-3 flex justify-between items-center';
+                
+                div.innerHTML = `
+                    <span class="text-gray-800">
+                        <strong>${worker.name}</strong> - ${worker.hours} 小時
+                    </span>
+                    <button onclick="removeEditWorker(${index})" class="text-red-500 hover:text-red-700 transition-colors">
+                        🗑️
+                    </button>
+                `;
+                
+                container.appendChild(div);
+            });
+        }
+
+        function removeEditMaterial(index) {
+            currentMaterials.splice(index, 1);
+            displayEditMaterials();
+        }
+
+        function removeEditWorker(index) {
+            currentWorkers.splice(index, 1);
+            displayEditWorkers();
+        }
+
+        function handleEditLogSubmit(e) {
+            e.preventDefault();
+            
+            const updatedLog = {
+                id: editingLogId,
+                date: document.getElementById('editDate').value,
+                location: document.getElementById('editLocation').value,
+                weather: document.getElementById('editWeather').value,
+                workType: document.getElementById('editWorkType').value,
+                crop: document.getElementById('editCrop').value,
+                details: document.getElementById('editDetails').value,
+                yield: document.getElementById('editYield').value,
+                observations: document.getElementById('editObservations').value,
+                notes: document.getElementById('editNotes').value,
+                materials: [...currentMaterials],
+                workers: [...currentWorkers],
+                timestamp: new Date().toISOString()
+            };
+            
+            if (!updatedLog.date || !updatedLog.workType) {
+                alert('請填寫日期和作業類型');
+                return;
+            }
+            
+            const logIndex = logEntries.findIndex(log => log.id === editingLogId);
+            if (logIndex !== -1) {
+                const originalLog = logEntries[logIndex];
+                
+                // 先回復原本的庫存
+                if (originalLog.materials && originalLog.materials.length > 0) {
+                    restoreMaterialStock(originalLog.materials);
+                }
+                
+                // 再扣除新的使用量
+                if (updatedLog.materials && updatedLog.materials.length > 0) {
+                    updateMaterialStock(updatedLog.materials);
+                }
+                
+                logEntries[logIndex] = updatedLog;
+                localStorage.setItem('farmLogEntries', JSON.stringify(logEntries));
+                
+                closeEditModal();
+                displayCalendar();
+                showNotification('工作記錄已更新！', 'success');
+            }
+        }
+
+        function closeEditModal() {
+            document.getElementById('editLogModal').classList.add('hidden');
+            editingLogId = null;
+            currentMaterials = [];
+            currentWorkers = [];
+        }
+
+        function calculateMaterialTotals(quantity, unit, dilution) {
+            const usage = parseFloat(quantity);
+            const dilutionRatio = parseFloat(dilution);
+            
+            if (isNaN(usage) || !unit) return { totalMl: '', totalLiters: '' };
+            
+            const usageInMl = usage * (CONVERSION_FACTORS[unit] || 1);
+            let totalMl;
+            
+            if (!isNaN(dilutionRatio) && dilutionRatio !== 0) {
+                totalMl = Math.round(usageInMl * dilutionRatio);
+            } else {
+                totalMl = Math.round(usageInMl);
+            }
+            
+            const totalLiters = (totalMl / 1000).toFixed(1);
+            
+            return { totalMl: String(totalMl), totalLiters: String(totalLiters) };
+        }
+
+        function updateMaterialTotal() {
+            const quantity = document.getElementById('materialQuantity').value;
+            const unit = document.getElementById('materialUnit').value;
+            const dilution = document.getElementById('dilutionRatio').value;
+            
+            const totals = calculateMaterialTotals(quantity, unit, dilution);
+            const totalDiv = document.getElementById('materialTotal');
+            const totalAmount = document.getElementById('totalAmount');
+            
+            if (totals.totalMl && totals.totalLiters) {
+                totalAmount.textContent = `${totals.totalMl} 毫升 (${totals.totalLiters} 公升)`;
+                totalDiv.classList.remove('hidden');
+            } else {
+                totalDiv.classList.add('hidden');
+            }
+        }
+
+        function addMaterial() {
+            const name = document.getElementById('materialName').value.trim();
+            const quantity = document.getElementById('materialQuantity').value;
+            const unit = document.getElementById('materialUnit').value;
+            const dilution = document.getElementById('dilutionRatio').value;
+            
+            if (!name || !quantity) {
+                alert('請填寫資材名稱和使用量');
+                return;
+            }
+            
+            const totals = calculateMaterialTotals(quantity, unit, dilution);
+            
+            const material = {
+                name,
+                quantity: parseFloat(quantity),
+                unit,
+                dilution: dilution ? parseFloat(dilution) : null,
+                totalMl: totals.totalMl,
+                totalLiters: totals.totalLiters
+            };
+            
+            currentMaterials.push(material);
+            displayCurrentMaterials();
+            
+            // Clear inputs
+            document.getElementById('materialName').value = '';
+            document.getElementById('materialQuantity').value = '';
+            document.getElementById('dilutionRatio').value = '';
+            document.getElementById('materialTotal').classList.add('hidden');
+        }
+
+        function displayCurrentMaterials() {
+            const container = document.getElementById('materialsList');
+            container.innerHTML = '';
+            
+            currentMaterials.forEach((material, index) => {
+                const div = document.createElement('div');
+                div.className = 'bg-white border border-gray-200 rounded-lg p-3 flex justify-between items-center';
+                
+                let dilutionText = material.dilution ? ` (稀釋 ${material.dilution} 倍)` : '';
+                let totalText = material.totalMl && material.totalLiters ? 
+                    ` → 總用量：${material.totalMl} 毫升 (${material.totalLiters} 公升)` : '';
+                
+                div.innerHTML = `
+                    <span class="text-gray-800">
+                        <strong>${material.name}</strong> - ${material.quantity} ${material.unit}${dilutionText}${totalText}
+                    </span>
+                    <button onclick="removeCurrentMaterial(${index})" class="text-red-500 hover:text-red-700 transition-colors">
+                        🗑️
+                    </button>
+                `;
+                
+                container.appendChild(div);
+            });
+        }
+
+        function removeCurrentMaterial(index) {
+            currentMaterials.splice(index, 1);
+            displayCurrentMaterials();
+        }
+
+        function handleMaterialSearch() {
+            const query = document.getElementById('materialName').value.toLowerCase();
+            const suggestions = document.getElementById('materialSuggestions');
+            
+            if (query.length < 1) {
+                suggestions.classList.add('hidden');
+                return;
+            }
+            
+            // 過濾並去重複名稱的資材
+            const filteredMaterials = materials.filter(material => 
+                material.name.toLowerCase().includes(query)
+            );
+            
+            // 去除重複名稱，只保留每個名稱的第一個項目
+            const uniqueMaterials = [];
+            const seenNames = new Set();
+            
+            filteredMaterials.forEach(material => {
+                if (!seenNames.has(material.name)) {
+                    seenNames.add(material.name);
+                    uniqueMaterials.push(material);
+                }
+            });
+            
+            if (uniqueMaterials.length === 0) {
+                suggestions.classList.add('hidden');
+                return;
+            }
+            
+            suggestions.innerHTML = '';
+            uniqueMaterials.forEach(material => {
+                const div = document.createElement('div');
+                div.className = 'px-3 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0';
+                div.innerHTML = `
+                    <div class="font-medium">${material.name}</div>
+                    <div class="text-sm text-gray-500">${material.category}</div>
+                    ${material.remarks ? `<div class="text-xs text-gray-400">${material.remarks}</div>` : ''}
+                `;
+                div.onclick = () => {
+                    document.getElementById('materialName').value = material.name;
+                    suggestions.classList.add('hidden');
+                };
+                suggestions.appendChild(div);
+            });
+            
+            suggestions.classList.remove('hidden');
+        }
+
+        function handleWorkerSearch() {
+            const query = document.getElementById('workerName').value.toLowerCase();
+            const suggestions = document.getElementById('workerSuggestions');
+            
+            if (query.length < 1) {
+                suggestions.classList.add('hidden');
+                return;
+            }
+            
+            const filteredPersonnel = personnel.filter(person => 
+                person.name.toLowerCase().includes(query)
+            );
+            
+            if (filteredPersonnel.length === 0) {
+                suggestions.classList.add('hidden');
+                return;
+            }
+            
+            suggestions.innerHTML = '';
+            filteredPersonnel.forEach(person => {
+                const div = document.createElement('div');
+                div.className = 'px-3 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0';
+                div.innerHTML = `
+                    <div class="font-medium">${person.name}</div>
+                    <div class="text-sm text-gray-500">${person.role}</div>
+                `;
+                div.onclick = () => {
+                    document.getElementById('workerName').value = person.name;
+                    suggestions.classList.add('hidden');
+                };
+                suggestions.appendChild(div);
+            });
+            
+            suggestions.classList.remove('hidden');
+        }
+
+        function addWorker() {
+            const name = document.getElementById('workerName').value.trim();
+            const hours = document.getElementById('workHours').value;
+            
+            if (!name || !hours) {
+                alert('請填寫人員姓名和工作時數');
+                return;
+            }
+            
+            const worker = {
+                name,
+                hours: parseFloat(hours)
+            };
+            
+            currentWorkers.push(worker);
+            displayCurrentWorkers();
+            
+            // Clear inputs
+            document.getElementById('workerName').value = '';
+            document.getElementById('workHours').value = '';
+        }
+
+        function displayCurrentWorkers() {
+            const container = document.getElementById('workersList');
+            container.innerHTML = '';
+            
+            currentWorkers.forEach((worker, index) => {
+                const div = document.createElement('div');
+                div.className = 'bg-white border border-gray-200 rounded-lg p-3 flex justify-between items-center';
+                
+                div.innerHTML = `
+                    <span class="text-gray-800">
+                        <strong>${worker.name}</strong> - ${worker.hours} 小時
+                    </span>
+                    <button onclick="removeCurrentWorker(${index})" class="text-red-500 hover:text-red-700 transition-colors">
+                        🗑️
+                    </button>
+                `;
+                
+                container.appendChild(div);
+            });
+        }
+
+        function removeCurrentWorker(index) {
+            currentWorkers.splice(index, 1);
+            displayCurrentWorkers();
+        }
+
+        function handleWorkLogSubmit(e) {
+            e.preventDefault();
+            
+            const formData = {
+                id: Date.now(),
+                date: document.getElementById('date').value,
+                location: document.getElementById('location').value,
+                weather: document.getElementById('weather').value,
+                workType: document.getElementById('workType').value,
+                crop: document.getElementById('crop').value,
+                details: document.getElementById('details').value,
+                yield: document.getElementById('yield').value,
+                observations: document.getElementById('observations').value,
+                notes: document.getElementById('notes').value,
+                materials: [...currentMaterials],
+                workers: [...currentWorkers],
+                timestamp: new Date().toISOString()
+            };
+            
+            if (!formData.date || !formData.workType) {
+                alert('請填寫日期和作業類型');
+                return;
+            }
+            
+            // 自動扣除庫存
+            updateMaterialStock(currentMaterials);
+            
+            logEntries.unshift(formData);
+            localStorage.setItem('farmLogEntries', JSON.stringify(logEntries));
+            
+            // Reset form
+            document.getElementById('farmLogForm').reset();
+            currentMaterials = [];
+            currentWorkers = [];
+            displayCurrentMaterials();
+            displayCurrentWorkers();
+            document.getElementById('date').value = new Date().toISOString().split('T')[0];
+            
+            showNotification('工作日誌已成功儲存！', 'success');
+        }
+
+        function updateMaterialStock(usedMaterials) {
+            usedMaterials.forEach(usedMaterial => {
+                const materialIndex = materials.findIndex(m => m.name === usedMaterial.name);
+                
+                if (materialIndex !== -1) {
+                    const material = materials[materialIndex];
+                    
+                    if (material.stockUnit === '瓶' && material.bottleCapacity) {
+                        // 瓶裝資材的特殊處理
+                        updateBottleStock(material, usedMaterial);
+                    } else {
+                        // 一般資材的處理
+                        updateRegularStock(material, usedMaterial);
+                    }
+                }
+            });
+            
+            // 儲存更新後的資材資料
+            localStorage.setItem('farmMaterials', JSON.stringify(materials));
+        }
+
+        function updateBottleStock(material, usedMaterial) {
+            // 計算使用的毫升數
+            let usedMl = 0;
+            if (usedMaterial.unit === '毫升') {
+                usedMl = usedMaterial.quantity;
+            } else if (usedMaterial.unit === '公升') {
+                usedMl = usedMaterial.quantity * 1000;
+            } else {
+                // 其他單位暫時按原數值處理
+                usedMl = usedMaterial.quantity;
+            }
+            
+            // 初始化瓶裝庫存資料
+            if (!material.bottleStock) {
+                material.bottleStock = {
+                    unopenedBottles: material.currentStock || 0,
+                    openedBottleMl: 0
+                };
+            }
+            
+            let remainingUsage = usedMl;
+            const bottleCapacityMl = material.bottleCapacityUnit === '公升' ? 
+                material.bottleCapacity * 1000 : material.bottleCapacity;
+            
+            // 先從已開封的瓶子扣除
+            if (material.bottleStock.openedBottleMl > 0 && remainingUsage > 0) {
+                const usedFromOpened = Math.min(remainingUsage, material.bottleStock.openedBottleMl);
+                material.bottleStock.openedBottleMl -= usedFromOpened;
+                remainingUsage -= usedFromOpened;
+            }
+            
+            // 如果還有剩餘使用量，開啟新瓶子
+            while (remainingUsage > 0 && material.bottleStock.unopenedBottles > 0) {
+                material.bottleStock.unopenedBottles -= 1;
+                const usedFromNewBottle = Math.min(remainingUsage, bottleCapacityMl);
+                material.bottleStock.openedBottleMl = bottleCapacityMl - usedFromNewBottle;
+                remainingUsage -= usedFromNewBottle;
+            }
+            
+            // 更新總庫存（以瓶為單位的顯示值）
+            material.currentStock = material.bottleStock.unopenedBottles + 
+                (material.bottleStock.openedBottleMl > 0 ? 1 : 0);
+            
+            // 記錄庫存異動
+            if (!material.stockHistory) {
+                material.stockHistory = [];
+            }
+            
+            const workTypeElement = document.getElementById('workType');
+            const workType = workTypeElement ? workTypeElement.value : '農場作業';
+            
+            material.stockHistory.push({
+                date: new Date().toISOString(),
+                type: 'usage',
+                amount: -usedMl,
+                previousStock: material.currentStock,
+                newStock: material.currentStock,
+                reason: '農場作業使用',
+                note: `${workType} - 使用 ${usedMaterial.quantity} ${usedMaterial.unit}${usedMaterial.dilution ? ` (稀釋${usedMaterial.dilution}倍)` : ''} | 剩餘：未開封${material.bottleStock.unopenedBottles}瓶，開封${material.bottleStock.openedBottleMl}毫升`,
+                bottleStock: {
+                    unopenedBottles: material.bottleStock.unopenedBottles,
+                    openedBottleMl: material.bottleStock.openedBottleMl
+                }
+            });
+            
+            console.log(`瓶裝庫存更新: ${material.name} - 使用 ${usedMl}毫升, 剩餘：未開封${material.bottleStock.unopenedBottles}瓶，開封${material.bottleStock.openedBottleMl}毫升`);
+        }
+
+        function updateRegularStock(material, usedMaterial) {
+            // 計算實際使用量（轉換為庫存單位）
+            let usageInStockUnit = convertToStockUnit(
+                usedMaterial.quantity, 
+                usedMaterial.unit, 
+                material.stockUnit
+            );
+            
+            // 確保庫存數值正確
+            const currentStock = parseFloat(material.currentStock) || 0;
+            
+            // 扣除庫存
+            const newStock = Math.max(0, currentStock - usageInStockUnit);
+            material.currentStock = newStock;
+            
+            // 記錄庫存異動
+            if (!material.stockHistory) {
+                material.stockHistory = [];
+            }
+            
+            const workTypeElement = document.getElementById('workType');
+            const workType = workTypeElement ? workTypeElement.value : '農場作業';
+            
+            material.stockHistory.push({
+                date: new Date().toISOString(),
+                type: 'usage',
+                amount: -usageInStockUnit,
+                previousStock: currentStock,
+                newStock: newStock,
+                reason: '農場作業使用',
+                note: `${workType} - ${usedMaterial.quantity} ${usedMaterial.unit}${usedMaterial.dilution ? ` (稀釋${usedMaterial.dilution}倍)` : ''}`
+            });
+            
+            console.log(`庫存更新: ${material.name} - 使用 ${usageInStockUnit} ${material.stockUnit}, 從 ${currentStock} 變為 ${newStock}`);
+        }
+
+        function convertToStockUnit(quantity, fromUnit, toUnit) {
+            if (fromUnit === toUnit) return quantity;
+            
+            // 轉換為基本單位（毫升或克）
+            const fromFactor = CONVERSION_FACTORS[fromUnit] || 1;
+            const toFactor = CONVERSION_FACTORS[toUnit] || 1;
+            
+            // 如果單位系統不同（液體vs固體），直接返回原數量
+            const liquidUnits = ['毫升', '公升'];
+            const solidUnits = ['克', '公斤', '斤'];
+            
+            const fromIsLiquid = liquidUnits.includes(fromUnit);
+            const toIsLiquid = liquidUnits.includes(toUnit);
+            
+            if (fromIsLiquid !== toIsLiquid) {
+                return quantity; // 不同單位系統，無法轉換
+            }
+            
+            // 相同單位系統，進行轉換
+            const baseQuantity = quantity * fromFactor;
+            return baseQuantity / toFactor;
+        }
+
+        function restoreMaterialStock(usedMaterials) {
+            usedMaterials.forEach(usedMaterial => {
+                const materialIndex = materials.findIndex(m => m.name === usedMaterial.name);
+                
+                if (materialIndex !== -1) {
+                    const material = materials[materialIndex];
+                    
+                    if (material.stockUnit === '瓶' && material.bottleCapacity) {
+                        // 瓶裝資材的特殊處理
+                        restoreBottleStock(material, usedMaterial);
+                    } else {
+                        // 一般資材的處理
+                        restoreRegularStock(material, usedMaterial);
+                    }
+                }
+            });
+            
+            // 儲存更新後的資材資料
+            localStorage.setItem('farmMaterials', JSON.stringify(materials));
+        }
+
+        function restoreBottleStock(material, usedMaterial) {
+            // 計算要回復的毫升數
+            let restoreMl = 0;
+            if (usedMaterial.unit === '毫升') {
+                restoreMl = usedMaterial.quantity;
+            } else if (usedMaterial.unit === '公升') {
+                restoreMl = usedMaterial.quantity * 1000;
+            } else {
+                restoreMl = usedMaterial.quantity;
+            }
+            
+            // 初始化瓶裝庫存資料
+            if (!material.bottleStock) {
+                material.bottleStock = {
+                    unopenedBottles: 0,
+                    openedBottleMl: 0
+                };
+            }
+            
+            const bottleCapacityMl = material.bottleCapacityUnit === '公升' ? 
+                material.bottleCapacity * 1000 : material.bottleCapacity;
+            
+            // 先加到已開封的瓶子
+            let remainingRestore = restoreMl;
+            const canAddToOpened = bottleCapacityMl - material.bottleStock.openedBottleMl;
+            
+            if (canAddToOpened > 0 && remainingRestore > 0) {
+                const addToOpened = Math.min(remainingRestore, canAddToOpened);
+                material.bottleStock.openedBottleMl += addToOpened;
+                remainingRestore -= addToOpened;
+            }
+            
+            // 如果還有剩餘，增加未開封瓶子
+            while (remainingRestore > 0) {
+                material.bottleStock.unopenedBottles += 1;
+                const addToNewBottle = Math.min(remainingRestore, bottleCapacityMl);
+                if (addToNewBottle < bottleCapacityMl) {
+                    // 新瓶子沒有裝滿，變成開封狀態
+                    material.bottleStock.openedBottleMl = addToNewBottle;
+                    material.bottleStock.unopenedBottles -= 1;
+                }
+                remainingRestore -= addToNewBottle;
+            }
+            
+            // 更新總庫存
+            material.currentStock = material.bottleStock.unopenedBottles + 
+                (material.bottleStock.openedBottleMl > 0 ? 1 : 0);
+            
+            // 記錄庫存異動
+            if (!material.stockHistory) {
+                material.stockHistory = [];
+            }
+            
+            material.stockHistory.push({
+                date: new Date().toISOString(),
+                type: 'restore',
+                amount: restoreMl,
+                previousStock: material.currentStock,
+                newStock: material.currentStock,
+                reason: '編輯記錄回復',
+                note: `回復庫存 - ${usedMaterial.quantity} ${usedMaterial.unit}${usedMaterial.dilution ? ` (稀釋${usedMaterial.dilution}倍)` : ''} | 現況：未開封${material.bottleStock.unopenedBottles}瓶，開封${material.bottleStock.openedBottleMl}毫升`,
+                bottleStock: {
+                    unopenedBottles: material.bottleStock.unopenedBottles,
+                    openedBottleMl: material.bottleStock.openedBottleMl
+                }
+            });
+            
+            console.log(`瓶裝庫存回復: ${material.name} - 回復 ${restoreMl}毫升, 現況：未開封${material.bottleStock.unopenedBottles}瓶，開封${material.bottleStock.openedBottleMl}毫升`);
+        }
+
+        function restoreRegularStock(material, usedMaterial) {
+            // 計算實際使用量（轉換為庫存單位）
+            let usageInStockUnit = convertToStockUnit(
+                usedMaterial.quantity, 
+                usedMaterial.unit, 
+                material.stockUnit
+            );
+            
+            // 確保庫存數值正確
+            const currentStock = parseFloat(material.currentStock) || 0;
+            
+            // 回復庫存
+            const newStock = currentStock + usageInStockUnit;
+            material.currentStock = newStock;
+            
+            // 記錄庫存異動
+            if (!material.stockHistory) {
+                material.stockHistory = [];
+            }
+            
+            material.stockHistory.push({
+                date: new Date().toISOString(),
+                type: 'restore',
+                amount: usageInStockUnit,
+                previousStock: currentStock,
+                newStock: newStock,
+                reason: '編輯記錄回復',
+                note: `回復庫存 - ${usedMaterial.quantity} ${usedMaterial.unit}${usedMaterial.dilution ? ` (稀釋${usedMaterial.dilution}倍)` : ''}`
+            });
+            
+            console.log(`庫存回復: ${material.name} - 回復 ${usageInStockUnit} ${material.stockUnit}, 從 ${currentStock} 變為 ${newStock}`);
+        }
+
+        function handleAddMaterial(e) {
+            e.preventDefault();
+            
+            const initialStock = parseFloat(document.getElementById('initialStock').value) || 0;
+            const totalPrice = parseFloat(document.getElementById('totalPrice').value) || 0;
+            const unitPrice = parseFloat(document.getElementById('unitPrice').value) || 0;
+            const stockDate = document.getElementById('stockDate').value || new Date().toISOString().split('T')[0];
+            const stockUnit = document.getElementById('stockUnit').value;
+            
+            // 處理瓶裝容量
+            let bottleCapacity = null;
+            let bottleCapacityUnit = null;
+            if (stockUnit === '瓶') {
+                bottleCapacity = parseFloat(document.getElementById('bottleCapacity').value);
+                bottleCapacityUnit = document.getElementById('bottleCapacityUnit').value;
+                
+                if (!bottleCapacity || bottleCapacity <= 0) {
+                    alert('選擇瓶裝單位時，請填寫每瓶容量');
+                    return;
+                }
+            }
+            
+            const material = {
+                id: Date.now(),
+                name: document.getElementById('newMaterialName').value,
+                category: document.getElementById('materialCategory').value,
+                remarks: document.getElementById('materialRemarks').value,
+                stockDate: stockDate,
+                // 庫存管理欄位
+                currentStock: initialStock,
+                stockUnit: stockUnit,
+                bottleCapacity: bottleCapacity,
+                bottleCapacityUnit: bottleCapacityUnit,
+                totalPrice: totalPrice,
+                unitPrice: unitPrice,
+                // 庫存記錄
+                stockHistory: [{
+                    date: stockDate + 'T00:00:00.000Z',
+                    type: 'initial',
+                    amount: initialStock,
+                    newStock: initialStock,
+                    reason: '初始庫存',
+                    note: `建立資材時的初始庫存 - 總價：$${totalPrice}，單價：$${unitPrice}${bottleCapacity ? `，每瓶容量：${bottleCapacity}${bottleCapacityUnit}` : ''}`
+                }]
+            };
+            
+            // 如果是瓶裝資材，初始化瓶裝庫存資料
+            if (stockUnit === '瓶' && bottleCapacity) {
+                material.bottleStock = {
+                    unopenedBottles: initialStock,
+                    openedBottleMl: 0
+                };
+            }
+            
+            if (!material.name || !material.category) {
+                alert('請填寫資材名稱和類別');
+                return;
+            }
+            
+            materials.push(material);
+            localStorage.setItem('farmMaterials', JSON.stringify(materials));
+            
+            document.getElementById('addMaterialForm').reset();
+            document.getElementById('unitPrice').value = '';
+            document.getElementById('bottleCapacityDiv').classList.add('hidden');
+            // 設定預設日期為今天
+            document.getElementById('stockDate').value = new Date().toISOString().split('T')[0];
+            showNotification('資材已成功新增！', 'success');
+        }
+
+        function handleAddPersonnel(e) {
+            e.preventDefault();
+            
+            const person = {
+                id: Date.now(),
+                name: document.getElementById('personnelName').value,
+                role: document.getElementById('personnelRole').value,
+                phone: document.getElementById('personnelPhone').value,
+                skills: document.getElementById('personnelSkills').value
+            };
+            
+            if (!person.name || !person.role) {
+                alert('請填寫姓名和職位');
+                return;
+            }
+            
+            personnel.push(person);
+            localStorage.setItem('farmPersonnel', JSON.stringify(personnel));
+            
+            document.getElementById('addPersonnelForm').reset();
+            showNotification('人員已成功新增！', 'success');
+        }
+
+        function displayMaterialsManagement() {
+            const container = document.querySelector('#managementSection #materialsList');
+            
+            if (materials.length === 0) {
+                container.innerHTML = '<div class="text-center text-gray-500 py-4">尚無資材記錄</div>';
+                return;
+            }
+            
+            // 合併同名資材
+            const mergedMaterials = mergeMaterialsByName(materials);
+            
+            container.innerHTML = '';
+            mergedMaterials.forEach((material, index) => {
+                const div = document.createElement('div');
+                div.className = 'border border-gray-200 rounded-lg p-4';
+                
+                const stockValue = material.totalStock || 0;
+                const stockUnit = material.stockUnit || '個';
+                const avgUnitPrice = material.avgUnitPrice || 0;
+                const totalValue = avgUnitPrice > 0 ? (stockValue * avgUnitPrice).toFixed(2) : '0.00';
+                
+                // 顯示瓶裝容量資訊和庫存詳情
+                let capacityInfo = '';
+                let stockDisplay = `${stockValue.toFixed(1)} ${stockUnit}`;
+                
+                if (material.stockUnit === '瓶' && material.bottleCapacity) {
+                    capacityInfo = `<span class="text-xs text-blue-500 bg-blue-100 px-2 py-1 rounded ml-2">每瓶 ${material.bottleCapacity}${material.bottleCapacityUnit}</span>`;
+                    
+                    // 計算瓶裝庫存詳情
+                    let totalUnopenedBottles = 0;
+                    let totalOpenedMl = 0;
+                    
+                    material.batches.forEach(batch => {
+                        if (batch.bottleStock) {
+                            totalUnopenedBottles += batch.bottleStock.unopenedBottles || 0;
+                            totalOpenedMl += batch.bottleStock.openedBottleMl || 0;
+                        } else {
+                            // 舊資料沒有 bottleStock，視為全部未開封
+                            totalUnopenedBottles += batch.currentStock || 0;
+                        }
+                    });
+                    
+                    if (totalOpenedMl > 0) {
+                        stockDisplay = `未開封 ${totalUnopenedBottles} 瓶，開封 ${Math.round(totalOpenedMl)} 毫升`;
+                    } else {
+                        stockDisplay = `未開封 ${totalUnopenedBottles} 瓶`;
+                    }
+                }
+
+                div.innerHTML = `
+                    <div class="flex justify-between items-start">
+                        <div class="flex-1">
+                            <div class="flex items-center space-x-2 mb-2">
+                                <h4 class="font-medium text-gray-800">${material.name}</h4>
+                                ${material.batchCount > 1 ? `<span class="text-xs text-blue-500 bg-blue-100 px-2 py-1 rounded">${material.batchCount} 批次</span>` : ''}
+                                ${capacityInfo}
+                            </div>
+                            <p class="text-sm text-gray-600">類別：${material.category}</p>
+                            <div class="flex items-center space-x-4 mt-2">
+                                <span class="text-sm text-green-600 bg-green-50 px-2 py-1 rounded">
+                                    總庫存：${stockDisplay}
+                                </span>
+                            </div>
+                            ${material.remarks ? `<p class="text-sm text-gray-500 mt-1">備註：${material.remarks}</p>` : ''}
+                        </div>
+                        <div class="flex space-x-2 ml-4">
+                            <button onclick="adjustStockByName('${material.name}')" class="text-blue-500 hover:text-blue-700 text-sm px-2 py-1 rounded border border-blue-300 hover:bg-blue-50 transition-colors">
+                                📦 調整
+                            </button>
+                            <button onclick="deleteMaterialByName('${material.name}')" class="text-red-500 hover:text-red-700 px-3 py-2 rounded hover:bg-red-50 transition-colors cursor-pointer border border-red-300 hover:border-red-500">🗑️</button>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function mergeMaterialsByName(materials) {
+            const merged = {};
+            
+            materials.forEach(material => {
+                const name = material.name;
+                
+                if (!merged[name]) {
+                    merged[name] = {
+                        name: name,
+                        category: material.category,
+                        remarks: material.remarks,
+                        stockUnit: material.stockUnit || '個',
+                        bottleCapacity: material.bottleCapacity,
+                        bottleCapacityUnit: material.bottleCapacityUnit,
+                        totalStock: 0,
+                        totalCost: 0,
+                        avgUnitPrice: 0,
+                        batchCount: 0,
+                        batches: []
+                    };
+                }
+                
+                const currentStock = material.currentStock || 0;
+                const unitPrice = material.unitPrice || 0;
+                const totalPrice = material.totalPrice || 0;
+                
+                merged[name].totalStock += currentStock;
+                merged[name].totalCost += totalPrice;
+                merged[name].batchCount += 1;
+                merged[name].batches.push(material);
+                
+                // 計算加權平均單價
+                if (merged[name].totalStock > 0) {
+                    merged[name].avgUnitPrice = merged[name].totalCost / merged[name].totalStock;
+                }
+            });
+            
+            return Object.values(merged);
+        }
+
+        function displayPersonnelManagement() {
+            const container = document.querySelector('#managementSection #personnelList');
+            
+            if (personnel.length === 0) {
+                container.innerHTML = '<div class="text-center text-gray-500 py-4">尚無人員記錄</div>';
+                return;
+            }
+            
+            container.innerHTML = '';
+            personnel.forEach((person, index) => {
+                const div = document.createElement('div');
+                div.className = 'border border-gray-200 rounded-lg p-4 flex justify-between items-center';
+                div.innerHTML = `
+                    <div>
+                        <h4 class="font-medium text-gray-800">${person.name}</h4>
+                        <p class="text-sm text-gray-600">職位：${person.role}</p>
+                        ${person.phone ? `<p class="text-sm text-gray-600">電話：${person.phone}</p>` : ''}
+                        ${person.skills ? `<p class="text-sm text-gray-600">專長：${person.skills}</p>` : ''}
+                    </div>
+                    <button onclick="deletePersonnel(${index})" class="text-red-500 hover:text-red-700 px-3 py-2 rounded hover:bg-red-50 transition-colors cursor-pointer border border-red-300 hover:border-red-500">🗑️</button>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function deleteMaterial(index) {
+            console.log('Delete material called with index:', index);
+            // 直接刪除，不使用 confirm
+            materials.splice(index, 1);
+            localStorage.setItem('farmMaterials', JSON.stringify(materials));
+            displayMaterialsManagement();
+            updateStats();
+            showNotification('資材已刪除', 'info');
+        }
+
+        function deletePersonnel(index) {
+            console.log('Delete personnel called with index:', index);
+            // 直接刪除，不使用 confirm
+            personnel.splice(index, 1);
+            localStorage.setItem('farmPersonnel', JSON.stringify(personnel));
+            displayPersonnelManagement();
+            updateStats();
+            showNotification('人員已刪除', 'info');
+        }
+
+        function deleteLogEntry(logId) {
+            // 直接刪除，不使用 confirm
+            const index = logEntries.findIndex(log => log.id === logId);
+            if (index !== -1) {
+                const logToDelete = logEntries[index];
+                
+                // 回復庫存
+                if (logToDelete.materials && logToDelete.materials.length > 0) {
+                    restoreMaterialStock(logToDelete.materials);
+                }
+                
+                logEntries.splice(index, 1);
+                localStorage.setItem('farmLogEntries', JSON.stringify(logEntries));
+                closeEditModal();
+                closeDayModal();
+                displayCalendar();
+                showNotification('記錄已刪除', 'info');
+            }
+        }
+
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 px-6 py-3 rounded-lg text-white font-medium z-50 ${
+                type === 'success' ? 'bg-green-500' : 
+                type === 'error' ? 'bg-red-500' : 'bg-blue-500'
+            }`;
+            notification.textContent = message;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+
+        // Stock Management Functions
+
+        function showStockReport() {
+            const reportContent = document.getElementById('stockReportContent');
+            
+            if (materials.length === 0) {
+                reportContent.innerHTML = `
+                    <div class="text-center py-8">
+                        <div class="text-6xl mb-4">📊</div>
+                        <h3 class="text-lg font-medium text-gray-600 mb-2">尚無庫存資料</h3>
+                        <p class="text-gray-500">請先新增資材後再查看庫存報表</p>
+                    </div>
+                `;
+            } else {
+                // 合併同名資材
+                const mergedMaterials = mergeMaterialsByName(materials);
+                
+                reportContent.innerHTML = `
+                    <!-- 統計摘要 -->
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 text-center mb-6">
+                        <div class="text-2xl font-bold text-blue-600">${mergedMaterials.length}</div>
+                        <div class="text-sm text-blue-600">資材品項</div>
+                    </div>
+                    
+                    <!-- 搜尋功能 -->
+                    <div class="mb-6">
+                        <div class="relative">
+                            <input type="text" id="stockSearchInput" placeholder="輸入關鍵字搜尋資材品項..." 
+                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-lg"
+                                   oninput="filterStockItems()">
+                            <div class="absolute right-3 top-3 text-gray-400">
+                                🔍
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 詳細清單 -->
+                    <div class="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                        <div class="bg-gray-50 px-4 py-3 border-b border-gray-200">
+                            <h4 class="font-medium text-gray-800">詳細庫存清單 (點選項目查看進出記錄)</h4>
+                        </div>
+                        <div id="stockItemsList" class="divide-y divide-gray-200">
+                            ${mergedMaterials.map((material, index) => {
+                                const stockValue = material.totalStock || 0;
+                                const stockUnit = material.stockUnit || '個';
+                                
+                                // 計算正確的瓶裝庫存顯示
+                                let stockDisplayText = `${stockValue.toFixed(1)} ${stockUnit}`;
+                                if (material.stockUnit === '瓶' && material.bottleCapacity) {
+                                    let totalUnopenedBottles = 0;
+                                    let totalOpenedMl = 0;
+                                    
+                                    material.batches.forEach(batch => {
+                                        if (batch.bottleStock) {
+                                            totalUnopenedBottles += batch.bottleStock.unopenedBottles || 0;
+                                            totalOpenedMl += batch.bottleStock.openedBottleMl || 0;
+                                        } else {
+                                            // 舊資料沒有 bottleStock，視為全部未開封
+                                            totalUnopenedBottles += batch.currentStock || 0;
+                                        }
+                                    });
+                                    
+                                    if (totalOpenedMl > 0) {
+                                        stockDisplayText = `未開封 ${totalUnopenedBottles} 瓶，開封 ${Math.round(totalOpenedMl)} 毫升`;
+                                    } else {
+                                        stockDisplayText = `未開封 ${totalUnopenedBottles} 瓶`;
+                                    }
+                                }
+                                
+                                return `
+                                    <div class="stock-item px-4 py-3 hover:bg-gray-50 cursor-pointer transition-colors" 
+                                         data-name="${material.name.toLowerCase()}" 
+                                         data-category="${material.category.toLowerCase()}"
+                                         onclick="showMaterialInOutHistory('${material.name}'); closeStockReport();">
+                                        <div class="flex justify-between items-center">
+                                            <div class="flex-1">
+                                                <div class="flex items-center space-x-2">
+                                                    <h5 class="font-medium text-gray-800">${material.name}</h5>
+                                                    <span class="text-xs text-purple-500 bg-purple-100 px-2 py-1 rounded">查看進出記錄</span>
+                                                    ${material.batchCount > 1 ? `<span class="text-xs text-blue-500 bg-blue-100 px-2 py-1 rounded">${material.batchCount} 批次</span>` : ''}
+                                                </div>
+                                                <p class="text-sm text-gray-600">${material.category}</p>
+                                                ${material.remarks ? `<p class="text-xs text-gray-500 mt-1">${material.remarks}</p>` : ''}
+                                            </div>
+                                            <div class="text-right">
+                                                <div class="text-lg font-medium text-green-600">
+                                                    ${stockDisplayText}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+            
+            document.getElementById('stockReportModal').classList.remove('hidden');
+        }
+
+        function filterStockItems() {
+            const searchTerm = document.getElementById('stockSearchInput').value.toLowerCase();
+            const stockItems = document.querySelectorAll('.stock-item');
+            
+            stockItems.forEach(item => {
+                const name = item.getAttribute('data-name');
+                const category = item.getAttribute('data-category');
+                
+                if (name.includes(searchTerm) || category.includes(searchTerm)) {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        }
+
+        function closeStockReport() {
+            document.getElementById('stockReportModal').classList.add('hidden');
+        }
+
+        function showMaterialBatches(materialName) {
+            const batches = materials.filter(m => m.name === materialName);
+            
+            document.getElementById('stockHistoryTitle').innerHTML = `
+                <span class="mr-2">📋</span>${materialName} - 批次管理
+            `;
+            
+            const historyContent = document.getElementById('stockHistoryContent');
+            
+            if (batches.length === 0) {
+                historyContent.innerHTML = `
+                    <div class="text-center py-8">
+                        <div class="text-6xl mb-4">📋</div>
+                        <h3 class="text-lg font-medium text-gray-600 mb-2">找不到此資材</h3>
+                        <p class="text-gray-500">此資材可能已被刪除</p>
+                    </div>
+                `;
+            } else {
+                // 計算總計
+                const totalStock = batches.reduce((sum, batch) => sum + (batch.currentStock || 0), 0);
+                
+                historyContent.innerHTML = `
+                    <!-- 總計摘要 -->
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                        <h3 class="text-lg font-medium text-blue-800 mb-3">${materialName} - 總計</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="text-center">
+                                <div class="text-2xl font-bold text-blue-600">${totalStock.toFixed(1)}</div>
+                                <div class="text-sm text-blue-600">${batches[0].stockUnit || '個'}</div>
+                            </div>
+                            <div class="text-center">
+                                <div class="text-2xl font-bold text-green-600">${batches.length}</div>
+                                <div class="text-sm text-green-600">批次數量</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 批次清單 -->
+                    <div class="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                        <div class="bg-gray-50 px-4 py-3 border-b border-gray-200">
+                            <h4 class="font-medium text-gray-800">批次詳細資料 (${batches.length} 個批次)</h4>
+                        </div>
+                        <div class="divide-y divide-gray-200">
+                            ${batches.map((batch, index) => {
+                                const stockValue = batch.currentStock || 0;
+                                const stockUnit = batch.stockUnit || '個';
+                                const stockDate = batch.stockDate || '';
+                                
+                                return `
+                                    <div class="px-4 py-3">
+                                        <div class="flex justify-between items-start">
+                                            <div class="flex-1">
+                                                <div class="flex items-center space-x-2 mb-2">
+                                                    <h5 class="font-medium text-gray-800">批次 #${index + 1}</h5>
+                                                    ${stockDate ? `<span class="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">${stockDate}</span>` : ''}
+                                                </div>
+                                                <div class="text-sm">
+                                                    <span class="text-gray-500">庫存：</span>
+                                                    <span class="font-medium text-green-600">${stockValue.toFixed(1)} ${stockUnit}</span>
+                                                </div>
+                                                ${batch.remarks ? `<p class="text-xs text-gray-500 mt-2">備註：${batch.remarks}</p>` : ''}
+                                            </div>
+                                            <div class="flex space-x-2 ml-4">
+                                                <button onclick="showStockHistory(${materials.indexOf(batch)}); closeStockHistory();" class="text-green-500 hover:text-green-700 text-xs px-2 py-1 rounded border border-green-300 hover:bg-green-50 transition-colors">
+                                                    📋 記錄
+                                                </button>
+                                                <button onclick="adjustStock(${materials.indexOf(batch)}); closeStockHistory();" class="text-blue-500 hover:text-blue-700 text-xs px-2 py-1 rounded border border-blue-300 hover:bg-blue-50 transition-colors">
+                                                    📦 調整
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+            
+            document.getElementById('stockHistoryModal').classList.remove('hidden');
+        }
+
+        function adjustStockByName(materialName) {
+            const batches = materials.filter(m => m.name === materialName);
+            if (batches.length === 0) return;
+            
+            // 如果只有一個批次，直接調整
+            if (batches.length === 1) {
+                const index = materials.indexOf(batches[0]);
+                adjustStock(index);
+                return;
+            }
+            
+            // 多個批次時，先顯示批次選擇
+            showMaterialBatches(materialName);
+        }
+
+        function deleteMaterialByName(materialName) {
+            const batches = materials.filter(m => m.name === materialName);
+            if (batches.length === 0) return;
+            
+            // 刪除所有同名批次
+            for (let i = materials.length - 1; i >= 0; i--) {
+                if (materials[i].name === materialName) {
+                    materials.splice(i, 1);
+                }
+            }
+            
+            localStorage.setItem('farmMaterials', JSON.stringify(materials));
+            displayMaterialsManagement();
+            updateStats();
+            showNotification(`已刪除 ${materialName} 的所有批次 (${batches.length} 個批次)`, 'info');
+        }
+
+        let adjustingMaterialIndex = null;
+        let viewingMaterialIndex = null;
+
+        function showStockHistory(materialIndex) {
+            viewingMaterialIndex = materialIndex;
+            const material = materials[materialIndex];
+            
+            document.getElementById('stockHistoryTitle').innerHTML = `
+                <span class="mr-2">📋</span>${material.name} - 庫存進出記錄
+            `;
+            
+            const historyContent = document.getElementById('stockHistoryContent');
+            const stockHistory = material.stockHistory || [];
+            
+            if (stockHistory.length === 0) {
+                historyContent.innerHTML = `
+                    <div class="text-center py-8">
+                        <div class="text-6xl mb-4">📋</div>
+                        <h3 class="text-lg font-medium text-gray-600 mb-2">尚無進出記錄</h3>
+                        <p class="text-gray-500">此資材還沒有任何庫存異動記錄</p>
+                    </div>
+                `;
+            } else {
+                // 顯示目前庫存狀態
+                const currentStock = material.currentStock || 0;
+                const stockUnit = material.stockUnit || '個';
+                const unitPrice = material.unitPrice || 0;
+                const stockDate = material.stockDate || '';
+                
+                historyContent.innerHTML = `
+                    <!-- 目前庫存狀態 -->
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                        <h3 class="text-lg font-medium text-blue-800 mb-3">目前庫存狀態</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div class="text-center">
+                                <div class="text-2xl font-bold text-blue-600">${currentStock.toFixed(1)}</div>
+                                <div class="text-sm text-blue-600">${stockUnit}</div>
+                            </div>
+                            ${unitPrice > 0 ? `
+                                <div class="text-center">
+                                    <div class="text-2xl font-bold text-green-600">$${unitPrice.toFixed(1)}</div>
+                                    <div class="text-sm text-green-600">單價</div>
+                                </div>
+                            ` : ''}
+                            ${stockDate ? `
+                                <div class="text-center">
+                                    <div class="text-lg font-medium text-gray-600">${stockDate}</div>
+                                    <div class="text-sm text-gray-600">入庫日期</div>
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                    
+                    <!-- 進出記錄 -->
+                    <div class="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                        <div class="bg-gray-50 px-4 py-3 border-b border-gray-200">
+                            <h4 class="font-medium text-gray-800">詳細進出記錄</h4>
+                        </div>
+                        <div class="divide-y divide-gray-200">
+                            ${stockHistory.slice().reverse().map(record => {
+                                const recordDate = new Date(record.date);
+                                const dateStr = recordDate.toLocaleDateString('zh-TW');
+                                const timeStr = recordDate.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' });
+                                
+                                let typeColor = 'text-gray-600 bg-gray-100';
+                                let typeIcon = '📝';
+                                let typeText = record.reason || '異動';
+                                
+                                if (record.type === 'initial') {
+                                    typeColor = 'text-blue-600 bg-blue-100';
+                                    typeIcon = '📦';
+                                    typeText = '初始庫存';
+                                } else if (record.type === 'usage') {
+                                    typeColor = 'text-red-600 bg-red-100';
+                                    typeIcon = '📤';
+                                    typeText = '使用';
+                                } else if (record.type === 'add') {
+                                    typeColor = 'text-green-600 bg-green-100';
+                                    typeIcon = '📥';
+                                    typeText = '增加';
+                                } else if (record.type === 'subtract') {
+                                    typeColor = 'text-orange-600 bg-orange-100';
+                                    typeIcon = '📤';
+                                    typeText = '減少';
+                                } else if (record.type === 'set') {
+                                    typeColor = 'text-purple-600 bg-purple-100';
+                                    typeIcon = '⚙️';
+                                    typeText = '設定';
+                                } else if (record.type === 'restore') {
+                                    typeColor = 'text-indigo-600 bg-indigo-100';
+                                    typeIcon = '🔄';
+                                    typeText = '回復';
+                                }
+                                
+                                const amountText = record.amount > 0 ? `+${record.amount}` : record.amount;
+                                const amountColor = record.amount > 0 ? 'text-green-600' : 'text-red-600';
+                                
+                                return `
+                                    <div class="px-4 py-3">
+                                        <div class="flex justify-between items-start">
+                                            <div class="flex-1">
+                                                <div class="flex items-center space-x-2 mb-2">
+                                                    <span class="px-2 py-1 rounded-full text-xs font-medium ${typeColor}">
+                                                        ${typeIcon} ${typeText}
+                                                    </span>
+                                                    <span class="text-sm text-gray-500">${dateStr} ${timeStr}</span>
+                                                </div>
+                                                <div class="text-sm text-gray-600 mb-1">
+                                                    <span class="font-medium ${amountColor}">${amountText} ${stockUnit}</span>
+                                                    → 庫存：${record.newStock} ${stockUnit}
+                                                </div>
+                                                ${record.note ? `<p class="text-xs text-gray-500">${record.note}</p>` : ''}
+                                            </div>
+                                        </div>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+            
+            document.getElementById('stockHistoryModal').classList.remove('hidden');
+        }
+
+        function closeStockHistory() {
+            document.getElementById('stockHistoryModal').classList.add('hidden');
+            viewingMaterialIndex = null;
+        }
+
+        function adjustStockFromHistory() {
+            if (viewingMaterialIndex !== null) {
+                closeStockHistory();
+                adjustStock(viewingMaterialIndex);
+            }
+        }
+
+        function adjustStock(materialIndex) {
+            adjustingMaterialIndex = materialIndex;
+            const material = materials[materialIndex];
+            
+            document.getElementById('adjustMaterialName').value = material.name;
+            document.getElementById('currentStock').value = `${material.currentStock || 0} ${material.stockUnit || '個'}`;
+            document.getElementById('adjustAmount').value = '';
+            document.getElementById('adjustNote').value = '';
+            document.getElementById('adjustType').value = 'add';
+            document.getElementById('adjustReason').value = '進貨';
+            
+            // Setup form submission
+            document.getElementById('stockAdjustForm').onsubmit = handleStockAdjustment;
+            
+            document.getElementById('stockAdjustModal').classList.remove('hidden');
+        }
+
+        function closeStockAdjust() {
+            document.getElementById('stockAdjustModal').classList.add('hidden');
+            adjustingMaterialIndex = null;
+        }
+
+        function showMaterialInOutHistory(materialName) {
+            document.getElementById('stockHistoryTitle').innerHTML = `
+                <span class="mr-2">📊</span>${materialName} - 進出記錄
+            `;
+            
+            const historyContent = document.getElementById('stockHistoryContent');
+            
+            // 獲取所有同名資材的批次
+            const batches = materials.filter(m => m.name === materialName);
+            
+            // 收集所有入庫記錄
+            const inRecords = [];
+            batches.forEach(batch => {
+                if (batch.stockHistory) {
+                    batch.stockHistory.forEach(record => {
+                        if (record.type === 'initial' || record.type === 'add' || record.type === 'restore') {
+                            inRecords.push({
+                                ...record,
+                                batchId: batch.id,
+                                stockUnit: batch.stockUnit
+                            });
+                        }
+                    });
+                }
+            });
+            
+            // 從工作日誌中找出使用此資材的記錄
+            const outRecords = [];
+            logEntries.forEach(log => {
+                if (log.materials && log.materials.length > 0) {
+                    log.materials.forEach(material => {
+                        if (material.name === materialName) {
+                            outRecords.push({
+                                date: log.date + 'T00:00:00.000Z',
+                                type: 'usage',
+                                workType: log.workType,
+                                location: log.location,
+                                crop: log.crop,
+                                quantity: material.quantity,
+                                unit: material.unit,
+                                dilution: material.dilution,
+                                totalMl: material.totalMl,
+                                totalLiters: material.totalLiters,
+                                note: `${log.workType} - ${material.quantity} ${material.unit}${material.dilution ? ` (稀釋${material.dilution}倍)` : ''}`
+                            });
+                        }
+                    });
+                }
+            });
+            
+            // 計算統計 - 針對瓶裝資材特殊處理
+            const stockUnit = batches.length > 0 ? batches[0].stockUnit : '個';
+            let currentStockDisplay = '';
+            
+            if (stockUnit === '瓶' && batches.length > 0 && batches[0].bottleCapacity) {
+                // 瓶裝資材：計算實際瓶數和開封毫升數
+                let totalUnopenedBottles = 0;
+                let totalOpenedMl = 0;
+                
+                batches.forEach(batch => {
+                    if (batch.bottleStock) {
+                        totalUnopenedBottles += batch.bottleStock.unopenedBottles || 0;
+                        totalOpenedMl += batch.bottleStock.openedBottleMl || 0;
+                    } else {
+                        // 舊資料沒有 bottleStock，視為全部未開封
+                        totalUnopenedBottles += batch.currentStock || 0;
+                    }
+                });
+                
+                if (totalOpenedMl > 0) {
+                    currentStockDisplay = `未開封 ${totalUnopenedBottles} 瓶，開封 ${Math.round(totalOpenedMl)} 毫升`;
+                } else {
+                    currentStockDisplay = `未開封 ${totalUnopenedBottles} 瓶`;
+                }
+            } else {
+                // 一般資材：直接計算總庫存
+                const totalCurrentStock = batches.reduce((sum, batch) => sum + (batch.currentStock || 0), 0);
+                currentStockDisplay = `${totalCurrentStock.toFixed(1)} ${stockUnit}`;
+            }
+            
+            historyContent.innerHTML = `
+                <!-- 統計摘要 -->
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                    <h3 class="text-lg font-medium text-blue-800 mb-3">${materialName} - 進出統計</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="text-center">
+                            <div class="text-2xl font-bold text-green-600">${inRecords.length}</div>
+                            <div class="text-sm text-green-600">入庫次數</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-2xl font-bold text-red-600">${outRecords.length}</div>
+                            <div class="text-sm text-red-600">使用次數</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-lg font-bold text-blue-600">${currentStockDisplay}</div>
+                            <div class="text-sm text-blue-600">目前庫存</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 左右分欄顯示 -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- 左欄：入庫記錄 -->
+                    <div class="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                        <div class="bg-green-50 px-4 py-3 border-b border-green-200">
+                            <h4 class="font-medium text-green-800 flex items-center">
+                                <span class="mr-2">📥</span>入庫記錄 (${inRecords.length} 筆)
+                            </h4>
+                        </div>
+                        <div class="max-h-96 overflow-y-auto">
+                            ${inRecords.length === 0 ? `
+                                <div class="text-center py-8 text-gray-500">
+                                    <div class="text-4xl mb-2">📥</div>
+                                    <p>尚無入庫記錄</p>
+                                </div>
+                            ` : `
+                                <div class="divide-y divide-gray-200">
+                                    ${inRecords.slice().reverse().map(record => {
+                                        const recordDate = new Date(record.date);
+                                        const dateStr = recordDate.toLocaleDateString('zh-TW');
+                                        const timeStr = recordDate.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' });
+                                        
+                                        let typeColor = 'text-green-600 bg-green-100';
+                                        let typeIcon = '📥';
+                                        let typeText = '入庫';
+                                        
+                                        if (record.type === 'initial') {
+                                            typeIcon = '📦';
+                                            typeText = '初始庫存';
+                                        } else if (record.type === 'add') {
+                                            typeIcon = '📥';
+                                            typeText = '增加庫存';
+                                        } else if (record.type === 'restore') {
+                                            typeColor = 'text-indigo-600 bg-indigo-100';
+                                            typeIcon = '🔄';
+                                            typeText = '回復庫存';
+                                        }
+                                        
+                                        return `
+                                            <div class="px-4 py-3">
+                                                <div class="flex items-center space-x-2 mb-2">
+                                                    <span class="px-2 py-1 rounded-full text-xs font-medium ${typeColor}">
+                                                        ${typeIcon} ${typeText}
+                                                    </span>
+                                                    <span class="text-sm text-gray-500">${dateStr} ${timeStr}</span>
+                                                </div>
+                                                <div class="text-sm text-gray-600 mb-1">
+                                                    <span class="font-medium text-green-600">+${Math.abs(record.amount || 0)} ${record.stockUnit || stockUnit}</span>
+                                                    → 庫存：${record.newStock || 0} ${record.stockUnit || stockUnit}
+                                                </div>
+                                                ${record.note ? `<p class="text-xs text-gray-500">${record.note}</p>` : ''}
+                                            </div>
+                                        `;
+                                    }).join('')}
+                                </div>
+                            `}
+                        </div>
+                    </div>
+                    
+                    <!-- 右欄：使用記錄 -->
+                    <div class="bg-white border border-gray-200 rounded-lg overflow-hidden">
+                        <div class="bg-red-50 px-4 py-3 border-b border-red-200">
+                            <h4 class="font-medium text-red-800 flex items-center">
+                                <span class="mr-2">📤</span>使用記錄 (${outRecords.length} 筆)
+                            </h4>
+                        </div>
+                        <div class="max-h-96 overflow-y-auto">
+                            ${outRecords.length === 0 ? `
+                                <div class="text-center py-8 text-gray-500">
+                                    <div class="text-4xl mb-2">📤</div>
+                                    <p>尚無使用記錄</p>
+                                </div>
+                            ` : `
+                                <div class="divide-y divide-gray-200">
+                                    ${outRecords.slice().reverse().map(record => {
+                                        const recordDate = new Date(record.date);
+                                        const dateStr = recordDate.toLocaleDateString('zh-TW');
+                                        
+                                        const workTypeColor = WORK_TYPE_COLORS[record.workType] || 'text-gray-700 bg-gray-50 border-gray-200';
+                                        
+                                        let dilutionText = record.dilution ? ` (稀釋 ${record.dilution} 倍)` : '';
+                                        let totalText = record.totalMl && record.totalLiters ? 
+                                            ` → 總用量：${record.totalMl} 毫升 (${record.totalLiters} 公升)` : '';
+                                        
+                                        return `
+                                            <div class="px-4 py-3">
+                                                <div class="flex items-center space-x-2 mb-2">
+                                                    <span class="px-2 py-1 rounded-full text-xs font-medium border ${workTypeColor}">
+                                                        ${record.workType}
+                                                    </span>
+                                                    <span class="text-sm text-gray-500">${dateStr}</span>
+                                                </div>
+                                                <div class="text-sm text-gray-600 mb-1">
+                                                    <span class="font-medium text-red-600">-${record.quantity} ${record.unit}</span>${dilutionText}${totalText}
+                                                </div>
+                                                ${record.location ? `<p class="text-xs text-gray-500">地點：${record.location}</p>` : ''}
+                                                ${record.crop ? `<p class="text-xs text-gray-500">作物：${record.crop}</p>` : ''}
+                                            </div>
+                                        `;
+                                    }).join('')}
+                                </div>
+                            `}
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('stockHistoryModal').classList.remove('hidden');
+        }
+
+        function showMaterialUsageHistory(materialName) {
+            // 重新導向到新的進出記錄功能
+            showMaterialInOutHistory(materialName);
+        }
+
+        function handleStockAdjustment(e) {
+            e.preventDefault();
+            
+            if (adjustingMaterialIndex === null) return;
+            
+            const material = materials[adjustingMaterialIndex];
+            const adjustType = document.getElementById('adjustType').value;
+            const adjustAmount = parseFloat(document.getElementById('adjustAmount').value);
+            const adjustReason = document.getElementById('adjustReason').value;
+            const adjustNote = document.getElementById('adjustNote').value;
+            
+            if (isNaN(adjustAmount) || adjustAmount <= 0) {
+                alert('請輸入有效的調整數量');
+                return;
+            }
+            
+            let newStock = material.currentStock || 0;
+            let changeAmount = 0;
+            
+            switch (adjustType) {
+                case 'add':
+                    newStock += adjustAmount;
+                    changeAmount = adjustAmount;
+                    break;
+                case 'subtract':
+                    newStock -= adjustAmount;
+                    changeAmount = -adjustAmount;
+                    break;
+                case 'set':
+                    changeAmount = adjustAmount - newStock;
+                    newStock = adjustAmount;
+                    break;
+            }
+            
+            if (newStock < 0) {
+                alert('庫存不能為負數');
+                return;
+            }
+            
+            // 更新庫存
+            material.currentStock = newStock;
+            
+            // 記錄庫存異動
+            if (!material.stockHistory) {
+                material.stockHistory = [];
+            }
+            
+            material.stockHistory.push({
+                date: new Date().toISOString(),
+                type: adjustType,
+                amount: changeAmount,
+                newStock: newStock,
+                reason: adjustReason,
+                note: adjustNote
+            });
+            
+            // 儲存到 localStorage
+            localStorage.setItem('farmMaterials', JSON.stringify(materials));
+            
+            // 更新顯示
+            displayMaterialsManagement();
+            closeStockAdjust();
+            
+            showNotification(`${material.name} 庫存已調整為 ${newStock} ${material.stockUnit}`, 'success');
+        }
+
+        // Export and Import Functions
+        function exportData() {
+            // Create separate CSV files for different data types
+            const now = new Date();
+            const dateStr = now.getFullYear() + 
+                          String(now.getMonth() + 1).padStart(2, '0') + 
+                          String(now.getDate()).padStart(2, '0');
+            const timeStr = String(now.getHours()).padStart(2, '0') + 
+                          String(now.getMinutes()).padStart(2, '0');
+
+            // Export Work Logs CSV
+            if (logEntries.length > 0) {
+                const logsCsv = convertLogsToCSV(logEntries);
+                downloadCSV(logsCsv, `工作日誌_${dateStr}_${timeStr}.csv`);
+            }
+
+            // Export Materials CSV
+            if (materials.length > 0) {
+                const materialsCsv = convertMaterialsToCSV(materials);
+                downloadCSV(materialsCsv, `資材清單_${dateStr}_${timeStr}.csv`);
+            }
+
+            // Export Personnel CSV
+            if (personnel.length > 0) {
+                const personnelCsv = convertPersonnelToCSV(personnel);
+                downloadCSV(personnelCsv, `人員清單_${dateStr}_${timeStr}.csv`);
+            }
+
+            showNotification(`已匯出 ${logEntries.length} 筆工作記錄、${materials.length} 項資材、${personnel.length} 位人員資料`, 'success');
+        }
+
+        function convertLogsToCSV(logs) {
+            const headers = [
+                '日期', '地點', '天氣', '作業類型', '作物', '作業詳情', '產量記錄', 
+                '觀察記錄', '備註', '使用資材', '工作人員', '總工時'
+            ];
+
+            const csvRows = [headers.join(',')];
+
+            logs.forEach(log => {
+                // Process materials
+                const materialsText = log.materials ? log.materials.map(m => {
+                    let dilution = m.dilution ? `(稀釋${m.dilution}倍)` : '';
+                    let total = m.totalMl ? `→${m.totalMl}毫升` : '';
+                    return `${m.name}:${m.quantity}${m.unit}${dilution}${total}`;
+                }).join(';') : '';
+
+                // Process workers
+                const workersText = log.workers ? log.workers.map(w => 
+                    `${w.name}:${w.hours}小時`
+                ).join(';') : '';
+
+                const totalHours = log.workers ? log.workers.reduce((sum, w) => sum + w.hours, 0) : 0;
+
+                const row = [
+                    log.date || '',
+                    escapeCSV(log.location || ''),
+                    log.weather || '',
+                    log.workType || '',
+                    escapeCSV(log.crop || ''),
+                    escapeCSV(log.details || ''),
+                    escapeCSV(log.yield || ''),
+                    escapeCSV(log.observations || ''),
+                    escapeCSV(log.notes || ''),
+                    escapeCSV(materialsText),
+                    escapeCSV(workersText),
+                    totalHours
+                ];
+
+                csvRows.push(row.join(','));
+            });
+
+            return csvRows.join('\n');
+        }
+
+        function convertMaterialsToCSV(materials) {
+            const headers = ['資材名稱', '類別', '備註'];
+            const csvRows = [headers.join(',')];
+
+            materials.forEach(material => {
+                const row = [
+                    escapeCSV(material.name || ''),
+                    escapeCSV(material.category || ''),
+                    escapeCSV(material.remarks || '')
+                ];
+                csvRows.push(row.join(','));
+            });
+
+            return csvRows.join('\n');
+        }
+
+        function convertPersonnelToCSV(personnel) {
+            const headers = ['姓名', '職位', '聯絡電話', '專長'];
+            const csvRows = [headers.join(',')];
+
+            personnel.forEach(person => {
+                const row = [
+                    escapeCSV(person.name || ''),
+                    escapeCSV(person.role || ''),
+                    escapeCSV(person.phone || ''),
+                    escapeCSV(person.skills || '')
+                ];
+                csvRows.push(row.join(','));
+            });
+
+            return csvRows.join('\n');
+        }
+
+        function escapeCSV(text) {
+            if (typeof text !== 'string') return text;
+            // Escape quotes and wrap in quotes if contains comma, quote, or newline
+            if (text.includes(',') || text.includes('"') || text.includes('\n')) {
+                return '"' + text.replace(/"/g, '""') + '"';
+            }
+            return text;
+        }
+
+        function downloadCSV(csvContent, filename) {
+            try {
+                // Add BOM for proper UTF-8 encoding in Excel
+                const BOM = '\uFEFF';
+                const fullContent = BOM + csvContent;
+                
+                // Create blob with proper MIME type
+                const blob = new Blob([fullContent], { 
+                    type: 'text/csv;charset=utf-8;' 
+                });
+                
+                // Check for IE/Edge legacy support
+                if (window.navigator && window.navigator.msSaveOrOpenBlob) {
+                    window.navigator.msSaveOrOpenBlob(blob, filename);
+                    showNotification(`檔案已下載：${filename}`, 'success');
+                    return;
+                }
+                
+                // Modern browsers
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                
+                // Set up the download link
+                link.href = url;
+                link.download = filename;
+                link.style.position = 'fixed';
+                link.style.left = '-9999px';
+                link.setAttribute('target', '_blank');
+                
+                // Add to DOM and trigger download
+                document.body.appendChild(link);
+                
+                // Force download with multiple methods
+                try {
+                    link.click();
+                } catch (clickError) {
+                    // Fallback click method
+                    const event = new MouseEvent('click', {
+                        view: window,
+                        bubbles: true,
+                        cancelable: true
+                    });
+                    link.dispatchEvent(event);
+                }
+                
+                // Clean up after a short delay
+                setTimeout(() => {
+                    try {
+                        document.body.removeChild(link);
+                        URL.revokeObjectURL(url);
+                    } catch (cleanupError) {
+                        console.log('Cleanup error:', cleanupError);
+                    }
+                }, 500);
+                
+                showNotification(`檔案已準備下載：${filename}`, 'success');
+                
+            } catch (error) {
+                console.error('Download error:', error);
+                
+                // Ultimate fallback: open in new window
+                try {
+                    const dataUri = 'data:text/csv;charset=utf-8,' + encodeURIComponent('\uFEFF' + csvContent);
+                    const newWindow = window.open();
+                    
+                    if (newWindow) {
+                        newWindow.document.write(`
+                            <html>
+                                <head><title>下載 ${filename}</title></head>
+                                <body>
+                                    <h3>請手動儲存此檔案</h3>
+                                    <p>檔案名稱：${filename}</p>
+                                    <p>請按 Ctrl+S (Windows) 或 Cmd+S (Mac) 儲存檔案</p>
+                                    <hr>
+                                    <pre style="white-space: pre-wrap; font-family: monospace;">${csvContent}</pre>
+                                </body>
+                            </html>
+                        `);
+                        newWindow.document.close();
+                        showNotification('請在新視窗中手動儲存檔案 (Ctrl+S)', 'info');
+                    } else {
+                        // Last resort: show alert with instructions
+                        alert(`下載功能被瀏覽器阻擋。\n\n請嘗試以下方法：\n1. 允許此網站的彈出視窗\n2. 檢查瀏覽器的下載設定\n3. 嘗試使用其他瀏覽器\n\n檔案名稱：${filename}`);
+                        showNotification('下載失敗，請檢查瀏覽器設定', 'error');
+                    }
+                } catch (fallbackError) {
+                    console.error('Fallback error:', fallbackError);
+                    alert(`匯出功能暫時無法使用。\n\n可能原因：\n1. 瀏覽器安全設定過於嚴格\n2. 彈出視窗被阻擋\n\n請嘗試使用其他瀏覽器或調整安全設定。`);
+                    showNotification('匯出失敗', 'error');
+                }
+            }
+        }
+
+        function importData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            if (!file.name.toLowerCase().endsWith('.csv')) {
+                showNotification('請選擇 CSV 格式的檔案', 'error');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const csvContent = e.target.result;
+                    const fileName = file.name.toLowerCase();
+                    
+                    // Determine file type based on filename
+                    let importedData = null;
+                    let dataType = '';
+                    
+                    if (fileName.includes('工作日誌') || fileName.includes('work') || fileName.includes('log')) {
+                        importedData = parseLogsCSV(csvContent);
+                        dataType = 'logs';
+                    } else if (fileName.includes('資材') || fileName.includes('material')) {
+                        importedData = parseMaterialsCSV(csvContent);
+                        dataType = 'materials';
+                    } else if (fileName.includes('人員') || fileName.includes('personnel') || fileName.includes('staff')) {
+                        importedData = parsePersonnelCSV(csvContent);
+                        dataType = 'personnel';
+                    } else {
+                        // Try to auto-detect based on headers
+                        const lines = csvContent.split('\n');
+                        if (lines.length > 0) {
+                            const headers = lines[0].toLowerCase();
+                            if (headers.includes('日期') && headers.includes('作業類型')) {
+                                importedData = parseLogsCSV(csvContent);
+                                dataType = 'logs';
+                            } else if (headers.includes('資材名稱') || headers.includes('類別')) {
+                                importedData = parseMaterialsCSV(csvContent);
+                                dataType = 'materials';
+                            } else if (headers.includes('姓名') && headers.includes('職位')) {
+                                importedData = parsePersonnelCSV(csvContent);
+                                dataType = 'personnel';
+                            } else {
+                                throw new Error('無法識別CSV檔案類型，請確認檔案格式正確');
+                            }
+                        }
+                    }
+
+                    if (!importedData || importedData.length === 0) {
+                        throw new Error('CSV檔案中沒有有效資料');
+                    }
+
+                    // Show confirmation dialog
+                    const confirmMessage = `即將匯入 ${importedData.length} 筆${getDataTypeName(dataType)}資料\n\n匯入方式：\n確定 = 合併模式（保留現有資料）\n取消 = 覆蓋模式（清除現有資料）`;
+                    
+                    const userChoice = confirm(confirmMessage);
+                    
+                    if (userChoice) {
+                        // Merge mode
+                        mergeCSVData(importedData, dataType);
+                    } else {
+                        const confirmOverwrite = confirm(`⚠️ 覆蓋模式將會刪除所有現有的${getDataTypeName(dataType)}資料！\n\n確定要繼續嗎？`);
+                        if (confirmOverwrite) {
+                            // Overwrite mode
+                            overwriteCSVData(importedData, dataType);
+                        }
+                    }
+
+                } catch (error) {
+                    console.error('Import error:', error);
+                    showNotification('匯入失敗：' + error.message, 'error');
+                }
+            };
+
+            reader.readAsText(file, 'UTF-8');
+            // Reset file input
+            event.target.value = '';
+        }
+
+        function parseLogsCSV(csvContent) {
+            const lines = csvContent.split('\n').filter(line => line.trim());
+            if (lines.length < 2) throw new Error('CSV檔案格式不正確');
+
+            const headers = parseCSVLine(lines[0]);
+            const logs = [];
+
+            for (let i = 1; i < lines.length; i++) {
+                const values = parseCSVLine(lines[i]);
+                if (values.length < headers.length) continue;
+
+                const log = {
+                    id: Date.now() + Math.random(),
+                    date: values[0] || '',
+                    location: values[1] || '',
+                    weather: values[2] || '',
+                    workType: values[3] || '',
+                    crop: values[4] || '',
+                    details: values[5] || '',
+                    yield: values[6] || '',
+                    observations: values[7] || '',
+                    notes: values[8] || '',
+                    materials: parseMaterialsFromText(values[9] || ''),
+                    workers: parseWorkersFromText(values[10] || ''),
+                    timestamp: new Date().toISOString()
+                };
+
+                if (log.date && log.workType) {
+                    logs.push(log);
+                }
+            }
+
+            return logs;
+        }
+
+        function parseMaterialsCSV(csvContent) {
+            const lines = csvContent.split('\n').filter(line => line.trim());
+            if (lines.length < 2) throw new Error('CSV檔案格式不正確');
+
+            const headers = parseCSVLine(lines[0]);
+            const materials = [];
+
+            for (let i = 1; i < lines.length; i++) {
+                const values = parseCSVLine(lines[i]);
+                if (values.length < 2) continue;
+
+                const material = {
+                    id: Date.now() + Math.random(),
+                    name: values[0] || '',
+                    category: values[1] || '',
+                    remarks: values[2] || ''
+                };
+
+                if (material.name && material.category) {
+                    materials.push(material);
+                }
+            }
+
+            return materials;
+        }
+
+        function parsePersonnelCSV(csvContent) {
+            const lines = csvContent.split('\n').filter(line => line.trim());
+            if (lines.length < 2) throw new Error('CSV檔案格式不正確');
+
+            const headers = parseCSVLine(lines[0]);
+            const personnel = [];
+
+            for (let i = 1; i < lines.length; i++) {
+                const values = parseCSVLine(lines[i]);
+                if (values.length < 2) continue;
+
+                const person = {
+                    id: Date.now() + Math.random(),
+                    name: values[0] || '',
+                    role: values[1] || '',
+                    phone: values[2] || '',
+                    skills: values[3] || ''
+                };
+
+                if (person.name && person.role) {
+                    personnel.push(person);
+                }
+            }
+
+            return personnel;
+        }
+
+        function parseCSVLine(line) {
+            const result = [];
+            let current = '';
+            let inQuotes = false;
+            
+            for (let i = 0; i < line.length; i++) {
+                const char = line[i];
+                const nextChar = line[i + 1];
+                
+                if (char === '"') {
+                    if (inQuotes && nextChar === '"') {
+                        current += '"';
+                        i++; // Skip next quote
+                    } else {
+                        inQuotes = !inQuotes;
+                    }
+                } else if (char === ',' && !inQuotes) {
+                    result.push(current);
+                    current = '';
+                } else {
+                    current += char;
+                }
+            }
+            
+            result.push(current);
+            return result;
+        }
+
+        function parseMaterialsFromText(text) {
+            if (!text) return [];
+            
+            return text.split(';').map(item => {
+                const parts = item.split(':');
+                if (parts.length < 2) return null;
+                
+                const name = parts[0];
+                const usageText = parts[1];
+                
+                // Parse quantity and unit
+                const match = usageText.match(/^(\d+(?:\.\d+)?)(.*?)(\(稀釋(\d+)倍\))?(→(\d+)毫升)?$/);
+                if (!match) return null;
+                
+                return {
+                    name: name,
+                    quantity: parseFloat(match[1]),
+                    unit: match[2] || '毫升',
+                    dilution: match[4] ? parseFloat(match[4]) : null,
+                    totalMl: match[6] || null
+                };
+            }).filter(item => item !== null);
+        }
+
+        function parseWorkersFromText(text) {
+            if (!text) return [];
+            
+            return text.split(';').map(item => {
+                const parts = item.split(':');
+                if (parts.length < 2) return null;
+                
+                const name = parts[0];
+                const hoursText = parts[1].replace('小時', '');
+                const hours = parseFloat(hoursText);
+                
+                if (isNaN(hours)) return null;
+                
+                return {
+                    name: name,
+                    hours: hours
+                };
+            }).filter(item => item !== null);
+        }
+
+        function getDataTypeName(dataType) {
+            switch (dataType) {
+                case 'logs': return '工作記錄';
+                case 'materials': return '資材';
+                case 'personnel': return '人員';
+                default: return '';
+            }
+        }
+
+        function mergeCSVData(importedData, dataType) {
+            let addedCount = 0;
+
+            switch (dataType) {
+                case 'logs':
+                    importedData.forEach(importedLog => {
+                        const exists = logEntries.some(existingLog => 
+                            existingLog.date === importedLog.date &&
+                            existingLog.workType === importedLog.workType &&
+                            existingLog.location === importedLog.location
+                        );
+                        
+                        if (!exists) {
+                            logEntries.push(importedLog);
+                            addedCount++;
+                        }
+                    });
+                    localStorage.setItem('farmLogEntries', JSON.stringify(logEntries));
+                    break;
+
+                case 'materials':
+                    importedData.forEach(importedMaterial => {
+                        const exists = materials.some(existingMaterial => 
+                            existingMaterial.name === importedMaterial.name &&
+                            existingMaterial.category === importedMaterial.category
+                        );
+                        
+                        if (!exists) {
+                            materials.push(importedMaterial);
+                            addedCount++;
+                        }
+                    });
+                    localStorage.setItem('farmMaterials', JSON.stringify(materials));
+                    break;
+
+                case 'personnel':
+                    importedData.forEach(importedPerson => {
+                        const exists = personnel.some(existingPerson => 
+                            existingPerson.name === importedPerson.name &&
+                            existingPerson.role === importedPerson.role
+                        );
+                        
+                        if (!exists) {
+                            personnel.push(importedPerson);
+                            addedCount++;
+                        }
+                    });
+                    localStorage.setItem('farmPersonnel', JSON.stringify(personnel));
+                    break;
+            }
+
+            updateStats();
+            displayCalendar();
+            showNotification(`合併完成！新增了 ${addedCount} 筆${getDataTypeName(dataType)}`, 'success');
+        }
+
+        function overwriteCSVData(importedData, dataType) {
+            switch (dataType) {
+                case 'logs':
+                    logEntries.length = 0;
+                    logEntries.push(...importedData);
+                    localStorage.setItem('farmLogEntries', JSON.stringify(logEntries));
+                    break;
+
+                case 'materials':
+                    materials.length = 0;
+                    materials.push(...importedData);
+                    localStorage.setItem('farmMaterials', JSON.stringify(materials));
+                    break;
+
+                case 'personnel':
+                    personnel.length = 0;
+                    personnel.push(...importedData);
+                    localStorage.setItem('farmPersonnel', JSON.stringify(personnel));
+                    break;
+            }
+
+            updateStats();
+            displayCalendar();
+            showNotification(`資料已覆蓋！匯入了 ${importedData.length} 筆${getDataTypeName(dataType)}`, 'success');
+        }
+
+
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'962f967c8540f1cc',t:'MTc1MzE1MjE3OS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
