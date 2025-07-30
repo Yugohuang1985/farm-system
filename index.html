@@ -1580,11 +1580,18 @@
                     date.getMonth() !== currentDate.getMonth() ? 'text-gray-400 bg-gray-50' : 'bg-white hover:bg-gray-50'
                 }`;
                 
-                const dateStr = date.toISOString().split('T')[0];
+                // 使用本地日期字串，避免時區轉換問題
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                const dateStr = `${year}-${month}-${day}`;
+                
                 const dayLogs = logEntries.filter(log => log.date === dateStr);
                 
+                const displayDate = date.getDate();
+                
                 dayDiv.innerHTML = `
-                    <div class="font-semibold text-lg mb-1" onclick="showDayDetails('${dateStr}')">${date.getDate()}</div>
+                    <div class="font-semibold text-lg mb-1" onclick="showDayDetails('${dateStr}')">${displayDate}</div>
                     <div class="space-y-1">
                         ${dayLogs.map(log => {
                             const workTypeColor = WORK_TYPE_COLORS[log.workType] || 'text-gray-700 bg-gray-50 border-gray-200';
@@ -1746,7 +1753,13 @@
                 downloadCSV(personnelCsv, `人員清單_${dateStr}_${timeStr}.csv`);
             }
 
-            showNotification(`已匯出 ${logEntries.length} 筆工作記錄、${materials.length} 項資材、${personnel.length} 位人員資料`, 'success');
+            let exportMessage = '已匯出：';
+            const exportItems = [];
+            if (logEntries.length > 0) exportItems.push(`${logEntries.length} 筆工作記錄`);
+            if (materials.length > 0) exportItems.push(`${materials.length} 項資材(含完整交易記錄)`);
+            if (personnel.length > 0) exportItems.push(`${personnel.length} 位人員資料`);
+            
+            showNotification(exportMessage + exportItems.join('、'), 'success');
         }
 
         // Convert logs to CSV
@@ -1793,16 +1806,44 @@
 
         // Convert materials to CSV
         function convertMaterialsToCSV(materials) {
-            const headers = ['資材名稱', '類別', '庫存數量', '庫存單位', '備註'];
+            const headers = [
+                '資材名稱', '類別', '目前庫存', '庫存單位', '容量數量', '容量單位', 
+                '入庫價錢', '單位售價', '備註', '交易記錄'
+            ];
             const csvRows = [headers.join(',')];
 
             materials.forEach(material => {
+                // 處理交易記錄
+                let transactionText = '';
+                if (material.transactions && material.transactions.length > 0) {
+                    transactionText = material.transactions.map(t => {
+                        const date = new Date(t.date);
+                        const dateStr = `${date.getFullYear()}/${String(date.getMonth() + 1).padStart(2, '0')}/${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+                        let record = `${t.type}|${t.quantity}${material.stockUnit}|${dateStr}`;
+                        if (t.originalQuantity && t.originalUnit && t.originalUnit !== material.stockUnit) {
+                            record += `|原始:${t.originalQuantity}${t.originalUnit}`;
+                        }
+                        if (t.dilution) {
+                            record += `|稀釋${t.dilution}倍`;
+                        }
+                        if (t.note) {
+                            record += `|${t.note}`;
+                        }
+                        return record;
+                    }).join(';');
+                }
+
                 const row = [
                     escapeCSV(material.name || ''),
                     escapeCSV(material.category || ''),
                     material.currentStock || 0,
                     escapeCSV(material.stockUnit || ''),
-                    escapeCSV(material.remarks || '')
+                    material.capacity ? material.capacity.amount : '',
+                    material.capacity ? escapeCSV(material.capacity.unit) : '',
+                    material.purchasePrice || 0,
+                    material.unitPrice || 0,
+                    escapeCSV(material.remarks || ''),
+                    escapeCSV(transactionText)
                 ];
                 csvRows.push(row.join(','));
             });
@@ -2434,14 +2475,46 @@
             reader.onload = function(e) {
                 try {
                     const csvContent = e.target.result;
-                    // Simple CSV parsing - in production, you'd want more robust parsing
                     const lines = csvContent.split('\n').filter(line => line.trim());
                     
                     if (lines.length < 2) {
                         throw new Error('CSV檔案格式不正確');
                     }
 
-                    showNotification('CSV匯入功能開發中...', 'info');
+                    const headers = parseCSVLine(lines[0]);
+                    let importedCount = 0;
+                    let importType = '';
+
+                    // 判斷匯入類型
+                    if (headers.includes('日期') && headers.includes('作業類型')) {
+                        // 工作日誌匯入
+                        importType = '工作日誌';
+                        importedCount = importWorkLogs(lines);
+                    } else if (headers.includes('資材名稱') && headers.includes('類別')) {
+                        // 資材匯入
+                        importType = '資材';
+                        importedCount = importMaterials(lines);
+                    } else if (headers.includes('姓名') && headers.includes('職位')) {
+                        // 人員匯入
+                        importType = '人員';
+                        importedCount = importPersonnel(lines);
+                    } else {
+                        throw new Error('無法識別CSV檔案類型，請確認檔案格式是否正確');
+                    }
+
+                    saveData();
+                    updateStats();
+                    
+                    if (!document.getElementById('managementSection').classList.contains('hidden')) {
+                        displayMaterialsManagement();
+                        displayPersonnelManagement();
+                    }
+                    
+                    if (!document.getElementById('allLogsSection').classList.contains('hidden')) {
+                        displayCalendar();
+                    }
+
+                    showNotification(`成功匯入 ${importedCount} 筆${importType}資料！`, 'success');
                 } catch (error) {
                     showNotification('匯入失敗：' + error.message, 'error');
                 }
@@ -2450,6 +2523,336 @@
             reader.readAsText(file, 'UTF-8');
             event.target.value = '';
         }
+
+        // Parse CSV line
+        function parseCSVLine(line) {
+            const result = [];
+            let current = '';
+            let inQuotes = false;
+            
+            for (let i = 0; i < line.length; i++) {
+                const char = line[i];
+                
+                if (char === '"') {
+                    if (inQuotes && line[i + 1] === '"') {
+                        current += '"';
+                        i++;
+                    } else {
+                        inQuotes = !inQuotes;
+                    }
+                } else if (char === ',' && !inQuotes) {
+                    result.push(current.trim());
+                    current = '';
+                } else {
+                    current += char;
+                }
+            }
+            
+            result.push(current.trim());
+            return result;
+        }
+
+        // Import work logs
+        function importWorkLogs(lines) {
+            const headers = parseCSVLine(lines[0]);
+            let importedCount = 0;
+
+            for (let i = 1; i < lines.length; i++) {
+                try {
+                    const values = parseCSVLine(lines[i]);
+                    if (values.length < headers.length) continue;
+
+                    const logData = {};
+                    headers.forEach((header, index) => {
+                        logData[header] = values[index] || '';
+                    });
+
+                    // 解析並修正日期格式
+                    let dateValue = logData['日期'] || '';
+                    if (dateValue) {
+                        // 處理各種可能的日期格式
+                        if (dateValue.includes('/')) {
+                            // 處理 YYYY/MM/DD 或 MM/DD/YYYY 格式
+                            const dateParts = dateValue.split('/');
+                            if (dateParts.length === 3) {
+                                let year, month, day;
+                                if (dateParts[0].length === 4) {
+                                    // YYYY/MM/DD 格式
+                                    year = dateParts[0];
+                                    month = dateParts[1].padStart(2, '0');
+                                    day = dateParts[2].padStart(2, '0');
+                                } else {
+                                    // MM/DD/YYYY 格式
+                                    month = dateParts[0].padStart(2, '0');
+                                    day = dateParts[1].padStart(2, '0');
+                                    year = dateParts[2];
+                                }
+                                dateValue = `${year}-${month}-${day}`;
+                            }
+                        } else if (dateValue.includes('-')) {
+                            // 已經是 YYYY-MM-DD 格式，確保格式正確
+                            const dateParts = dateValue.split('-');
+                            if (dateParts.length === 3) {
+                                const year = dateParts[0];
+                                const month = dateParts[1].padStart(2, '0');
+                                const day = dateParts[2].padStart(2, '0');
+                                dateValue = `${year}-${month}-${day}`;
+                            }
+                        }
+                        
+                        // 驗證日期格式
+                        const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+                        if (!dateRegex.test(dateValue)) {
+                            console.warn(`第 ${i + 1} 行日期格式不正確: ${logData['日期']}`);
+                            continue;
+                        }
+                        
+                        // 驗證日期是否有效
+                        const testDate = new Date(dateValue + 'T00:00:00');
+                        if (isNaN(testDate.getTime())) {
+                            console.warn(`第 ${i + 1} 行日期無效: ${dateValue}`);
+                            continue;
+                        }
+                    }
+
+                    // 解析資材使用
+                    const materials = [];
+                    if (logData['使用資材']) {
+                        const materialParts = logData['使用資材'].split(';');
+                        materialParts.forEach(part => {
+                            const match = part.match(/^(.+?):(\d+(?:\.\d+)?)(.+?)(?:\(稀釋(\d+)倍\))?$/);
+                            if (match) {
+                                materials.push({
+                                    name: match[1].trim(),
+                                    quantity: parseFloat(match[2]),
+                                    unit: match[3].trim(),
+                                    dilution: match[4] ? parseFloat(match[4]) : null
+                                });
+                            }
+                        });
+                    }
+
+                    // 解析工作人員
+                    const workers = [];
+                    if (logData['工作人員']) {
+                        const workerParts = logData['工作人員'].split(';');
+                        workerParts.forEach(part => {
+                            const match = part.match(/^(.+?):(\d+(?:\.\d+)?)小時$/);
+                            if (match) {
+                                workers.push({
+                                    name: match[1].trim(),
+                                    hours: parseFloat(match[2])
+                                });
+                            }
+                        });
+                    }
+
+                    const workLog = {
+                        id: Date.now() + Math.random(),
+                        date: dateValue,
+                        location: logData['地點'] || '',
+                        weather: logData['天氣'] || '',
+                        workType: logData['作業類型'] || '',
+                        crop: logData['作物'] || '',
+                        details: logData['作業詳情'] || '',
+                        yield: logData['產量記錄'] || '',
+                        observations: logData['觀察記錄'] || '',
+                        notes: logData['備註'] || '',
+                        materials: materials,
+                        workers: workers,
+                        timestamp: new Date().toISOString()
+                    };
+
+                    if (workLog.date && workLog.workType) {
+                        logEntries.unshift(workLog);
+                        importedCount++;
+                    }
+                } catch (error) {
+                    console.warn(`第 ${i + 1} 行匯入失敗:`, error);
+                }
+            }
+
+            return importedCount;
+        }
+
+        // Import materials
+        function importMaterials(lines) {
+            const headers = parseCSVLine(lines[0]);
+            let importedCount = 0;
+
+            for (let i = 1; i < lines.length; i++) {
+                try {
+                    const values = parseCSVLine(lines[i]);
+                    if (values.length < headers.length) continue;
+
+                    const materialData = {};
+                    headers.forEach((header, index) => {
+                        materialData[header] = values[index] || '';
+                    });
+
+                    // 解析容量資訊
+                    let capacity = null;
+                    if (materialData['容量數量'] && materialData['容量單位']) {
+                        capacity = {
+                            amount: parseFloat(materialData['容量數量']),
+                            unit: materialData['容量單位']
+                        };
+                    }
+
+                    // 解析交易記錄
+                    const transactions = [];
+                    if (materialData['交易記錄']) {
+                        const transactionParts = materialData['交易記錄'].split(';');
+                        transactionParts.forEach(part => {
+                            if (part.trim()) {
+                                const fields = part.split('|');
+                                if (fields.length >= 3) {
+                                    const transaction = {
+                                        id: Date.now() + Math.random(),
+                                        type: fields[0],
+                                        date: new Date().toISOString(),
+                                        note: ''
+                                    };
+
+                                    // 解析數量和單位
+                                    const quantityMatch = fields[1].match(/^(\d+(?:\.\d+)?)(.*)$/);
+                                    if (quantityMatch) {
+                                        transaction.quantity = parseFloat(quantityMatch[1]);
+                                    }
+
+                                    // 解析日期
+                                    const dateStr = fields[2];
+                                    if (dateStr.includes('/')) {
+                                        try {
+                                            const [datePart, timePart] = dateStr.split(' ');
+                                            const [year, month, day] = datePart.split('/');
+                                            const [hour, minute] = timePart ? timePart.split(':') : ['00', '00'];
+                                            const parsedDate = new Date(year, month - 1, day, hour, minute);
+                                            if (!isNaN(parsedDate.getTime())) {
+                                                transaction.date = parsedDate.toISOString();
+                                            }
+                                        } catch (e) {
+                                            console.warn('日期解析失敗:', dateStr);
+                                        }
+                                    }
+
+                                    // 解析其他欄位
+                                    for (let j = 3; j < fields.length; j++) {
+                                        const field = fields[j];
+                                        if (field.startsWith('原始:')) {
+                                            const originalMatch = field.substring(3).match(/^(\d+(?:\.\d+)?)(.*)$/);
+                                            if (originalMatch) {
+                                                transaction.originalQuantity = parseFloat(originalMatch[1]);
+                                                transaction.originalUnit = originalMatch[2];
+                                            }
+                                        } else if (field.includes('稀釋') && field.includes('倍')) {
+                                            const dilutionMatch = field.match(/稀釋(\d+)倍/);
+                                            if (dilutionMatch) {
+                                                transaction.dilution = parseFloat(dilutionMatch[1]);
+                                            }
+                                        } else if (!field.startsWith('原始:') && !field.includes('稀釋')) {
+                                            transaction.note = field;
+                                        }
+                                    }
+
+                                    transactions.push(transaction);
+                                }
+                            }
+                        });
+                    }
+
+                    const material = {
+                        id: Date.now() + Math.random(),
+                        name: materialData['資材名稱'] || '',
+                        category: materialData['類別'] || '',
+                        currentStock: parseFloat(materialData['目前庫存'] || materialData['庫存數量']) || 0,
+                        stockUnit: materialData['庫存單位'] || '',
+                        capacity: capacity,
+                        purchasePrice: parseFloat(materialData['入庫價錢']) || 0,
+                        unitPrice: parseFloat(materialData['單位售價']) || 0,
+                        remarks: materialData['備註'] || '',
+                        transactions: transactions
+                    };
+
+                    if (material.name && material.category) {
+                        // 檢查是否已存在相同名稱的資材
+                        const existingMaterial = materials.find(m => m.name === material.name);
+                        if (existingMaterial) {
+                            // 如果已存在，更新資訊並合併交易記錄
+                            existingMaterial.category = material.category;
+                            existingMaterial.currentStock = material.currentStock;
+                            existingMaterial.stockUnit = material.stockUnit;
+                            existingMaterial.capacity = material.capacity;
+                            existingMaterial.purchasePrice = material.purchasePrice;
+                            existingMaterial.unitPrice = material.unitPrice;
+                            existingMaterial.remarks = material.remarks;
+                            
+                            // 合併交易記錄
+                            if (!existingMaterial.transactions) {
+                                existingMaterial.transactions = [];
+                            }
+                            existingMaterial.transactions = [...existingMaterial.transactions, ...material.transactions];
+                            
+                            // 添加匯入記錄
+                            existingMaterial.transactions.push({
+                                id: Date.now() + Math.random(),
+                                type: '調整',
+                                quantity: material.currentStock,
+                                date: new Date().toISOString(),
+                                note: 'CSV匯入更新資料'
+                            });
+                        } else {
+                            // 新增資材
+                            materials.push(material);
+                        }
+                        importedCount++;
+                    }
+                } catch (error) {
+                    console.warn(`第 ${i + 1} 行匯入失敗:`, error);
+                }
+            }
+
+            return importedCount;
+        }
+
+        // Import personnel
+        function importPersonnel(lines) {
+            const headers = parseCSVLine(lines[0]);
+            let importedCount = 0;
+
+            for (let i = 1; i < lines.length; i++) {
+                try {
+                    const values = parseCSVLine(lines[i]);
+                    if (values.length < headers.length) continue;
+
+                    const personnelData = {};
+                    headers.forEach((header, index) => {
+                        personnelData[header] = values[index] || '';
+                    });
+
+                    const person = {
+                        id: Date.now() + Math.random(),
+                        name: personnelData['姓名'] || '',
+                        role: personnelData['職位'] || '',
+                        phone: personnelData['聯絡電話'] || '',
+                        skills: personnelData['專長'] || ''
+                    };
+
+                    if (person.name && person.role) {
+                        // 檢查是否已存在相同姓名的人員
+                        const existingPerson = personnel.find(p => p.name === person.name);
+                        if (!existingPerson) {
+                            personnel.push(person);
+                            importedCount++;
+                        }
+                    }
+                } catch (error) {
+                    console.warn(`第 ${i + 1} 行匯入失敗:`, error);
+                }
+            }
+
+            return importedCount;
+        }
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'96737b2d1659f212',t:'MTc1Mzg2NDA5Mi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9673a4621419f230',t:'MTc1Mzg2NTc3OS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
